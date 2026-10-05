@@ -1,9 +1,11 @@
+using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
 using OkinawaBot.Application.Commands;
 using OkinawaBot.Application.Flows;
 using OkinawaBot.Application.Handlers;
 using OkinawaBot.Application.Input;
 using OkinawaBot.Application.Services;
 using OkinawaBot.Application.State;
+using OkinawaBot.Domain.Entities;
 using OkinawaBot.Tests.Fakes;
 
 namespace OkinawaBot.Tests.Handlers;
@@ -20,11 +22,13 @@ public class MessageHandlerTests
         var inputParser = new SaveInputParser();
         var saveService = new SaveService(_repository);
         var queryService = new QueryService(_repository);
+        var editService = new EditService(_repository);
 
         var saveFlowHandler = new SaveFlowHandler(_stateManager, commandParser, inputParser, saveService);
         var queryFlowHandler = new QueryFlowHandler(_stateManager, commandParser, queryService);
+        var editFlowHandler = new EditFlowHandler(_stateManager, commandParser, editService, inputParser);
 
-        _handler = new MessageHandler(_stateManager, commandParser, saveFlowHandler, queryFlowHandler);
+        _handler = new MessageHandler(_stateManager, commandParser, saveFlowHandler, queryFlowHandler, editFlowHandler);
     }
 
     // 驗證收到 Save 指令時，會正確切換至 SaveFlow 狀態
@@ -122,5 +126,66 @@ public class MessageHandlerTests
         // Assert
         var context = _stateManager.GetOrCreate(userId);
         Assert.Equal(ConversationState.MainMenu, context.State);
+    }
+
+    //MessageHandler 是否真的把訊息交給 EditFlowHandler。
+    [Fact]
+    public async Task EditCommand_ShouldEnterEditItemSelection()
+    {
+        const string userId = "user-1";
+
+        var result = await _handler.HandleAsync(
+            userId,
+            "Edit");
+
+        var context =
+            _stateManager.GetOrCreate(userId);
+
+        Assert.Equal(
+            ConversationState.EditItemSelection,
+            context.State);
+
+        Assert.Contains(
+            "編輯",
+            result.Message);
+    }
+
+    //測 Edit Flow 的實際 routing
+    [Fact]
+    public async Task EditState_ShouldRouteToEditFlowHandler()
+    {
+        const string userId = "user-1";
+
+        await _repository.CreateAsync(
+            new TravelItem
+            {
+                Name = "美麗海水族館",
+                Url = "https://example.com",
+                Category = "Attraction"
+            });
+
+        _stateManager.SetState(
+            userId,
+            ConversationState.EditItemSelection);
+
+        var result =
+            await _handler.HandleAsync(
+                userId,
+                "1");
+
+        var context =
+            _stateManager.GetOrCreate(userId);
+
+        Assert.Equal(
+            ConversationState.EditDataInput,
+            context.State);
+
+        Assert.Equal(
+            1,
+            context.CurrentItemId);
+
+        Assert.Contains(
+            "美麗海水族館",
+            result.Message);
     }
 }
