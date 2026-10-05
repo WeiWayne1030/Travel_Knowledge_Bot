@@ -1,4 +1,5 @@
 ﻿using OkinawaBot.Application.Commands;
+using OkinawaBot.Application.Input;
 using OkinawaBot.Application.Models;
 using OkinawaBot.Application.Services;
 using OkinawaBot.Application.State;
@@ -11,15 +12,18 @@ public class EditFlowHandler
     private readonly ConversationStateManager _stateManager;
     private readonly BotCommandParser _commandParser;
     private readonly EditService _editService;
+    private readonly SaveInputParser _inputParser;
 
     public EditFlowHandler(
         ConversationStateManager stateManager,
         BotCommandParser commandParser,
-        EditService editService)
+        EditService editService,
+        SaveInputParser inputParser)
     {
         _stateManager = stateManager;
         _commandParser = commandParser;
         _editService = editService;
+        _inputParser = inputParser;
     }
 
     public async Task<BotResponse> HandleAsync(
@@ -50,6 +54,15 @@ public class EditFlowHandler
                 message,
                 context);
         }
+
+        if (context.State ==
+        ConversationState.EditDataInput)
+            {
+                return await HandleDataInputAsync(
+                    userId,
+                    message,
+                    context);
+            }
 
         return new BotResponse
         {
@@ -115,6 +128,77 @@ public class EditFlowHandler
                 "URL\n" +
                 "#Category\n" +
                 "Name"
+        };
+    }
+
+    private async Task<BotResponse> HandleDataInputAsync(
+    string userId,
+    string message,
+    ConversationContext context)
+    {
+        if (context.CurrentItemId is null)
+        {
+            _stateManager.Reset(userId);
+
+            return new BotResponse
+            {
+                Message = "找不到目前要編輯的資料，請重新操作。"
+            };
+        }
+
+        var parseResult =
+            _inputParser.Parse(message);
+
+        if (!parseResult.IsSuccess)
+        {
+            return new BotResponse
+            {
+                Message = parseResult.ErrorMessage
+                    ?? "輸入格式錯誤。"
+            };
+        }
+
+        var request = new UpdateTravelItemRequest
+        {
+            Url = parseResult.Url!,
+            Category = parseResult.Category!,
+            Name = parseResult.Name!
+        };
+
+        var result =
+            await _editService.UpdateAsync(
+                context.CurrentItemId.Value,
+                request);
+
+        if (result.Status == EditResultStatus.NotFound)
+        {
+            _stateManager.Reset(userId);
+
+            return new BotResponse
+            {
+                Message = "找不到要編輯的資料。"
+            };
+        }
+
+        if (result.Status == EditResultStatus.Duplicate)
+        {
+            context.State =
+                ConversationState.EditDuplicateConfirmation;
+
+            return new BotResponse
+            {
+                Message =
+                    $"名稱「{request.Name}」已經存在。\n\n" +
+                    "如果仍然要儲存，請輸入 Continue。\n" +
+                    "如果不要修改，請輸入 Return。"
+            };
+        }
+
+        _stateManager.Reset(userId);
+
+        return new BotResponse
+        {
+            Message = "旅遊資訊修改成功。"
         };
     }
 }
