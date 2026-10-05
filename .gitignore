@@ -1,7 +1,7 @@
 ## Ignore Visual Studio / .NET temporary & output files
 .vs/
 [Bb]in/
-[Ob]j/
+[Oo]bj/
 out/
 *.user
 *.userosscache
