@@ -64,6 +64,15 @@ public class EditFlowHandler
                     context);
             }
 
+        if (context.State ==
+        ConversationState.EditDuplicateConfirmation)
+            {
+                return await HandleDuplicateConfirmationAsync(
+                    userId,
+                    message,
+                    context);
+            }
+
         return new BotResponse
         {
             Message = "目前無法處理這個操作。"
@@ -179,9 +188,10 @@ public class EditFlowHandler
                 Message = "找不到要編輯的資料。"
             };
         }
-
         if (result.Status == EditResultStatus.Duplicate)
         {
+            context.PendingEdit = request;
+
             context.State =
                 ConversationState.EditDuplicateConfirmation;
 
@@ -191,6 +201,72 @@ public class EditFlowHandler
                     $"名稱「{request.Name}」已經存在。\n\n" +
                     "如果仍然要儲存，請輸入 Continue。\n" +
                     "如果不要修改，請輸入 Return。"
+            };
+        }
+
+        _stateManager.Reset(userId);
+
+        return new BotResponse
+        {
+            Message = "旅遊資訊修改成功。"
+        };
+    }
+
+    private async Task<BotResponse>
+    HandleDuplicateConfirmationAsync(
+        string userId,
+        string message,
+        ConversationContext context)
+    {
+        var command =
+            _commandParser.Parse(message);
+
+        if (command == BotCommand.Return)
+        {
+            _stateManager.Reset(userId);
+
+            return new BotResponse
+            {
+                Message = "已取消修改，回到主選單。"
+            };
+        }
+
+        if (!message.Trim()
+            .Equals("Continue", StringComparison.OrdinalIgnoreCase))
+        {
+            return new BotResponse
+            {
+                Message =
+                    "請輸入 Continue 或 Return。"
+            };
+        }
+
+        if (context.CurrentItemId is null ||
+            context.PendingEdit is null)
+        {
+            _stateManager.Reset(userId);
+
+            return new BotResponse
+            {
+                Message =
+                    "找不到待處理的修改資料，請重新操作。"
+            };
+        }
+
+        //允許重複name
+        var result =
+            await _editService.UpdateAsync(
+                context.CurrentItemId.Value,
+                context.PendingEdit,
+                skipDuplicateCheck: true);
+
+        if (result.Status == EditResultStatus.NotFound)
+        {
+            _stateManager.Reset(userId);
+
+            return new BotResponse
+            {
+                Message = "找不到要編輯的資料。"
             };
         }
 

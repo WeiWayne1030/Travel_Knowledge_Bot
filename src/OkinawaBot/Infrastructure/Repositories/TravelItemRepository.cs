@@ -53,13 +53,13 @@ public class TravelItemRepository : ITravelItemRepository
         await _db.SaveChangesAsync();
     }
 
-    public async Task DeleteAsync(
-        TravelItem item)
-    {
-        _db.TravelItems.Remove(item);
+    //public async Task DeleteAsync(
+    //    TravelItem item)
+    //{
+    //    _db.TravelItems.Remove(item);
 
-        await _db.SaveChangesAsync();
-    }
+    //    await _db.SaveChangesAsync();
+    //}
 
     public async Task<IReadOnlyList<TravelItem>> GetAllAsync()
     {

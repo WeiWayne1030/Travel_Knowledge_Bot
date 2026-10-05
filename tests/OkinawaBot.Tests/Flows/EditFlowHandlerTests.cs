@@ -1,6 +1,7 @@
-﻿using OkinawaBot.Application.Commands;
+using OkinawaBot.Application.Commands;
 using OkinawaBot.Application.Flows;
 using OkinawaBot.Application.Input;
+using OkinawaBot.Application.Models;
 using OkinawaBot.Application.Services;
 using OkinawaBot.Application.State;
 using OkinawaBot.Domain.Entities;
@@ -240,14 +241,14 @@ public class EditFlowHandlerTests
 
         var result = await _handler.HandleAsync(
             userId,
-            "invalid input");
+            "輸入錯誤");
 
         Assert.Equal(
             ConversationState.EditDataInput,
             context.State);
 
         Assert.Contains(
-            "Category is required",
+            "缺少分類",
             result.Message);
     }
 
@@ -355,6 +356,124 @@ public class EditFlowHandlerTests
 
         Assert.Contains(
             "已經存在",
+            result.Message);
+    }
+
+
+    //return
+    [Fact]
+    public async Task DuplicateConfirmation_Return_ShouldCancelEdit()
+    {
+        const string userId = "user-1";
+
+        var item = await _repository.CreateAsync(
+            new TravelItem
+            {
+                Name = "首里城",
+                Url = "https://shuri.example.com",
+                Category = "Attraction"
+            });
+
+        var context =
+            _stateManager.GetOrCreate(userId);
+
+        context.State =
+            ConversationState.EditDuplicateConfirmation;
+
+        context.CurrentItemId =
+            item.Id;
+
+        context.PendingEdit =
+            new UpdateTravelItemRequest
+            {
+                Name = "美麗海水族館",
+                Url = "https://example.com",
+                Category = "Attraction"
+            };
+
+        var result = await _handler.HandleAsync(
+            userId,
+            "Return");
+
+        Assert.Equal(
+            ConversationState.MainMenu,
+            context.State);
+
+        Assert.Null(context.CurrentItemId);
+
+        Assert.Null(context.PendingEdit);
+
+        Assert.Equal(
+            "已回到主選單。",
+            result.Message);
+    }
+
+    //Continue Test
+    [Fact]
+    public async Task DuplicateConfirmation_Continue_ShouldUpdateItem()
+    {
+        const string userId = "user-1";
+
+        await _repository.CreateAsync(
+            new TravelItem
+            {
+                Name = "美麗海水族館",
+                Url = "https://aquarium.example.com",
+                Category = "Attraction"
+            });
+
+        var item = await _repository.CreateAsync(
+            new TravelItem
+            {
+                Name = "首里城",
+                Url = "https://shuri.example.com",
+                Category = "Attraction"
+            });
+
+        var context =
+            _stateManager.GetOrCreate(userId);
+
+        context.State =
+            ConversationState.EditDuplicateConfirmation;
+
+        context.CurrentItemId =
+            item.Id;
+
+        context.PendingEdit =
+            new UpdateTravelItemRequest
+            {
+                Name = "美麗海水族館",
+                Url = "https://new.example.com",
+                Category = "Restaurant"
+            };
+
+        var result = await _handler.HandleAsync(
+            userId,
+            "Continue");
+
+        var updatedItem =
+            await _repository.FindByIdAsync(item.Id);
+
+        Assert.Equal(
+            ConversationState.MainMenu,
+            context.State);
+
+        Assert.Equal(
+            "美麗海水族館",
+            updatedItem!.Name);
+
+        Assert.Equal(
+            "https://new.example.com",
+            updatedItem.Url);
+
+        Assert.Equal(
+            "Restaurant",
+            updatedItem.Category);
+
+        Assert.Null(context.PendingEdit);
+
+        Assert.Equal(
+            "旅遊資訊修改成功。",
             result.Message);
     }
 }

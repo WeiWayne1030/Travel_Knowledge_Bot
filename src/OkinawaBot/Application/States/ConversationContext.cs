@@ -13,4 +13,6 @@ public class ConversationContext
     public int? CurrentItemId { get; set; }
 
     public SaveTravelItemRequest? PendingSave { get; set; }
+
+    public UpdateTravelItemRequest? PendingEdit { get; set; }
 }

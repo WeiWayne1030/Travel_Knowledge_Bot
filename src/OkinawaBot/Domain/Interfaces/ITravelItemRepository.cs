@@ -16,8 +16,8 @@ public interface ITravelItemRepository
     Task UpdateAsync(
         TravelItem item);
 
-    Task DeleteAsync(
-        TravelItem item);
+    //Task DeleteAsync(
+    //    TravelItem item);
 
     Task<IReadOnlyList<TravelItem>> GetAllAsync();
 }
