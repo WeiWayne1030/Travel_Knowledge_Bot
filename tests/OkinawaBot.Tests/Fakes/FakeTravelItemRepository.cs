@@ -59,10 +59,13 @@ public class FakeTravelItemRepository : ITravelItemRepository
         return Task.CompletedTask;
     }
 
-    public Task DeleteAsync(TravelItem item)
+    public Task<IReadOnlyList<TravelItem>> GetAllAsync()
     {
-        _items.Remove(item);
+        IReadOnlyList<TravelItem> items =
+            _items
+                .OrderBy(x => x.Id)
+                .ToList();
 
-        return Task.CompletedTask;
+        return Task.FromResult(items);
     }
 }

@@ -13,10 +13,11 @@ public interface ITravelItemRepository
 
     Task<TravelItem> CreateAsync(
         TravelItem item);
-
     Task UpdateAsync(
         TravelItem item);
 
     Task DeleteAsync(
         TravelItem item);
+
+    Task<IReadOnlyList<TravelItem>> GetAllAsync();
 }

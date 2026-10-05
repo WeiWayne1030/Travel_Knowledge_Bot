@@ -79,7 +79,7 @@ public class MessageHandler
 
                 _stateManager.SetState(
                     userId,
-                    ConversationState.EditFlow);
+                    ConversationState.EditItemSelection);
 
                 break;
 

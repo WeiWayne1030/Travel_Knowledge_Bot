@@ -60,4 +60,11 @@ public class TravelItemRepository : ITravelItemRepository
 
         await _db.SaveChangesAsync();
     }
+
+    public async Task<IReadOnlyList<TravelItem>> GetAllAsync()
+    {
+        return await _db.TravelItems
+            .OrderBy(x => x.Id)
+            .ToListAsync();
+    }
 }

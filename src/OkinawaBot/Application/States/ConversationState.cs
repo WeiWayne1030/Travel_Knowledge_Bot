@@ -3,9 +3,15 @@
 public enum ConversationState
 {
     MainMenu,
+    
     SaveFlow,
     SaveDuplicateConfirmation,
+    
     QueryFlow,
-    EditFlow,
+
+    EditItemSelection,
+    EditDataInput,
+    EditDuplicateConfirmation,
+
     DeleteFlow,
 }
