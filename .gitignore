@@ -1,0 +1,49 @@
+## Ignore Visual Studio / .NET temporary & output files
+.vs/
+[Bb]in/
+[Ob]j/
+out/
+*.user
+*.userosscache
+*.sln.docstates
+
+## User-specific files & local settings
+appsettings*.Development.json
+appsettings.Local.json
+*.env
+*.env.local
+*.env.development
+*.env.production
+
+## VS Code & IDE settings (optional/recommended exclusions)
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.suo
+*.user
+*.userpsm
+*.ctu
+*.clw
+
+## OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+## Logs and databases
+*.log
+*.sqlite
+*.db
+
+## Node / Frontend (if any added in future)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
