@@ -13,25 +13,34 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 
+//Infrastructuer
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite(
         builder.Configuration.GetConnectionString(
             "DefaultConnection")));
 
+//repositoryÀu¥ı³B²z
 builder.Services.AddScoped<ITravelItemRepository, TravelItemRepository>();
 
-builder.Services.AddScoped<MessageHandler>();
-
-builder.Services.AddScoped<SaveFlowHandler>();
-
+//Application Services
 builder.Services.AddScoped<SaveService>();
+builder.Services.AddScoped<QueryService>();
+builder.Services.AddScoped<EditService>();
 
+//Application Flow
+builder.Services.AddScoped<SaveFlowHandler>();
+builder.Services.AddScoped<QueryFlowHandler>();
+builder.Services.AddScoped<EditFlowHandler>();
+
+//Application Utilities
+builder.Services.AddScoped<BotCommandParser>();
 builder.Services.AddScoped<SaveInputParser>();
 
-builder.Services.AddScoped<BotCommandParser>();
-
-// ä½¿ç”¨ AddSingleton è®“æ‰€æœ‰ HTTP Request å…±ç”¨åŒä¸€å€‹ ConversationStateManager å¯¦ä¾‹
+//§Q¥ÎAddSingleton¨ú¥NAddScoped,Åı©Ò¦³ HTTP Request ¦@¥Î¦P¤@­Ó Dictionary
 builder.Services.AddSingleton<ConversationStateManager>();
+
+//Handlers
+builder.Services.AddScoped<MessageHandler>();
 
 var app = builder.Build();
 
