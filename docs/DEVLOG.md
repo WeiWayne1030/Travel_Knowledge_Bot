@@ -21,6 +21,7 @@
 | 8 | 2026-10-05 11:05 | `6f3d4de` | 技術債與命名清理 | 修正 `Infrastructure` 拼字、`ConversationState.cs` 檔名、`ConcurrentDictionary` 狀態管理、刪除 `test.cs` 及取消追蹤 `bin/obj` 產物 |
 | 9 | 2026-10-06 | 待定 | 補齊所有流程與環境修復 | 完成 Query、Edit、Delete Flow，修復 MessageHandler 測試，並修正 Swagger 在 .NET 9 下的衝突與啟動設定 |
 | 10 | 2026-10-06 | 待定 | 補齊所有流程的整合測試 | 在 `LineWebhookTests.cs` 中補上 Query、Edit、Delete Flow 的 Webhook 整合測試，處理測試間 DB 資料互相污染問題。目前 64 測試全數通過 |
+| 11 | 2026-10-06 | 待定 | 引入 MediatR 架構重構 | 為了解耦 Controller 與 Handler，引入 MediatR 套件，將所有 FlowHandler 重構為 `IRequestHandler`，並將主邏輯移至 `ProcessMessageCommandHandler`，全面修復單元測試。 |
 
 ---
 
@@ -163,6 +164,25 @@
   - **解決方式**：測試碼改為用 EF Core 動態撈出剛才新增的資料在目前資料庫中的 `index`，送出該 `index` 確保操作對象正確。
   - **名稱防呆衝突**：Edit Flow 修改資料時，為了避免跟之前的測試殘留資料名稱重複而進到二次確認畫面，將測試用資料改以 `Guid` 產生隨機名稱，確保永遠可以走通 Happy Path。
 - **成果**：專案涵蓋 64 項單元與整合測試，全部執行通過 (`Passed`)，為 LINE Webhook 的 Controller 接接鋪好了安全網。
+
+### Phase 11 — 引入 MediatR 架構重構
+
+**目標**：為了解決未來擴充性問題以及 Controller 依賴過多 Handler 的情況，引入 MediatR 實踐 CQRS (Command Query Responsibility Segregation) 或 Mediator 設計模式。
+
+- **新增套件**：透過 NuGet 安裝 `MediatR`。
+- **重構 Command / Request**：
+  - 將各個流程所需的輸入參數封裝成 Command DTO，例如：`SaveFlowCommand`、`QueryFlowCommand`、`EditFlowCommand`、`DeleteFlowCommand`，以及主流程的 `ProcessMessageCommand`。
+- **重構 Handlers**：
+  - 將原先的 `SaveFlowHandler`、`QueryFlowHandler` 等類別全數改為實作 `IRequestHandler<TCommand, BotResponse>`。
+  - 將原本複雜且依賴多個 Handler 的 `MessageHandler` 刪除，新建 `ProcessMessageCommandHandler`。它只需注入 `ConversationStateManager` 與 `IMediator`，並透過 `_mediator.Send()` 來分派任務給各個子 Flow，達到完全解耦。
+- **重構 Program.cs**：
+  - 移除原先寫死的大量 `builder.Services.AddScoped<XxxFlowHandler>()`。
+  - 改用 `builder.Services.AddMediatR(...)` 讓系統自動掃描並註冊所有 Handler。
+- **重構單元與整合測試**：
+  - 為測試專案引入 `Microsoft.Extensions.DependencyInjection` 與 `MediatR` 的 DI 環境。
+  - 撰寫 PowerShell 自動化腳本，將 `tests/OkinawaBot.Tests/Flows/` 下高達數百行的測試檔內舊有 `.HandleAsync(userId, msg)` 呼叫，全面批量替換為 `.Handle(new OOOCommand(...), CancellationToken.None)`。
+  - 修正 MediatR 在測試中缺少 `ILoggerFactory` 的啟動錯誤。
+  - 最終 64 個測試全數 `Passed`，確保重構後系統行為與原先 100% 一致。
 
 ---
 
