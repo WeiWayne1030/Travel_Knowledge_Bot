@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using System.Net.Http.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -126,5 +126,68 @@ public class LineWebhookTests
         Assert.Equal(
             "美麗海水族館",
             item.Name);
+    }
+
+    [Fact]
+    public async Task QueryFlow_ShouldReturnQueriedItems()
+    {
+        // Arrange
+        var client = _factory.CreateClient();
+        var userId = "integration-query-user";
+        
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            db.TravelItems.Add(new OkinawaBot.Domain.Entities.TravelItem
+            {
+                Name = "美國村",
+                Url = "https://example.com/american-village",
+                Category = "Shopping"
+            });
+            await db.SaveChangesAsync();
+        }
+
+        // Act 1: 使用者輸入 Query 進入查詢模式
+        var queryCommandRequest = new LineWebhookRequest
+        {
+            Events =
+            [
+                new LineEvent
+                {
+                    Type = "message",
+                    Source = new LineSource { UserId = userId },
+                    Message = new LineMessage { Type = "text", Text = "Query" }
+                }
+            ]
+        };
+
+        var firstResponse = await client.PostAsJsonAsync("/api/LineWebhook", queryCommandRequest);
+        Assert.Equal(HttpStatusCode.OK, firstResponse.StatusCode);
+
+        // Act 2: 使用者輸入欲查詢的類別
+        var queryDataRequest = new LineWebhookRequest
+        {
+            Events =
+            [
+                new LineEvent
+                {
+                    Type = "message",
+                    Source = new LineSource { UserId = userId },
+                    Message = new LineMessage { Type = "text", Text = "Shopping" }
+                }
+            ]
+        };
+
+        var secondResponse = await client.PostAsJsonAsync("/api/LineWebhook", queryDataRequest);
+        
+        // Assert: 確認 HTTP 狀態與回傳內容
+        Assert.True(secondResponse.IsSuccessStatusCode);
+        
+        var responseBody = await secondResponse.Content.ReadAsStringAsync();
+        
+        // 確認回傳內容中包含我們寫入的資料
+        Assert.Contains("【Shopping】", responseBody);
+        Assert.Contains("美國村", responseBody);
+        Assert.Contains("https://example.com/american-village", responseBody);
     }
 }
