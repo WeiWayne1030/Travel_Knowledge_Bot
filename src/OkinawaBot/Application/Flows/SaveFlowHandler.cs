@@ -1,4 +1,6 @@
-﻿using OkinawaBot.Application.Commands;
+using MediatR;
+using OkinawaBot.Application.Requests;
+using OkinawaBot.Application.Commands;
 using OkinawaBot.Application.Input;
 using OkinawaBot.Application.Models;
 using OkinawaBot.Application.Services;
@@ -6,7 +8,7 @@ using OkinawaBot.Application.State;
 
 namespace OkinawaBot.Application.Flows;
 
-public class SaveFlowHandler
+public class SaveFlowHandler : IRequestHandler<SaveFlowCommand, BotResponse>
 {
     private readonly ConversationStateManager _stateManager;
 
@@ -28,10 +30,12 @@ public class SaveFlowHandler
         _saveService = saveService;
     }
 
-    public async Task<BotResponse> HandleAsync(
-        string userId,
-        string message)
+    public async Task<BotResponse> Handle(
+        SaveFlowCommand request,
+        CancellationToken cancellationToken)
     {
+        var userId = request.UserId;
+        var message = request.Message;
 
         var context =
         _stateManager.GetOrCreate(userId);

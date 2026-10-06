@@ -1,4 +1,6 @@
-﻿using OkinawaBot.Application.Commands;
+using MediatR;
+using OkinawaBot.Application.Requests;
+using OkinawaBot.Application.Commands;
 using OkinawaBot.Application.Input;
 using OkinawaBot.Application.Models;
 using OkinawaBot.Application.Services;
@@ -7,7 +9,7 @@ using OkinawaBot.Domain.Interfaces;
 
 namespace OkinawaBot.Application.Flows;
 
-public class EditFlowHandler
+public class EditFlowHandler : IRequestHandler<EditFlowCommand, BotResponse>
 {
     private readonly ConversationStateManager _stateManager;
     private readonly BotCommandParser _commandParser;
@@ -26,10 +28,13 @@ public class EditFlowHandler
         _inputParser = inputParser;
     }
 
-    public async Task<BotResponse> HandleAsync(
-        string userId,
-        string message)
+    public async Task<BotResponse> Handle(
+        EditFlowCommand request,
+        CancellationToken cancellationToken)
     {
+        var userId = request.UserId;
+        var message = request.Message;
+
         var context =
             _stateManager.GetOrCreate(userId);
 

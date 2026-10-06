@@ -1,4 +1,6 @@
-﻿using System.Text;
+using System.Text;
+using MediatR;
+using OkinawaBot.Application.Requests;
 using OkinawaBot.Application.Commands;
 using OkinawaBot.Application.Models;
 using OkinawaBot.Application.Services;
@@ -6,7 +8,7 @@ using OkinawaBot.Application.State;
 
 namespace OkinawaBot.Application.Flows;
 
-public class QueryFlowHandler
+public class QueryFlowHandler : IRequestHandler<QueryFlowCommand, BotResponse>
 {
     private readonly ConversationStateManager _stateManager;
     private readonly BotCommandParser _commandParser;
@@ -22,10 +24,13 @@ public class QueryFlowHandler
         _queryService = queryService;
     }
 
-    public async Task<BotResponse> HandleAsync(
-        string userId,
-        string message)
+    public async Task<BotResponse> Handle(
+        QueryFlowCommand request,
+        CancellationToken cancellationToken)
     {
+        var userId = request.UserId;
+        var message = request.Message;
+
         var context =
             _stateManager.GetOrCreate(userId);
 
