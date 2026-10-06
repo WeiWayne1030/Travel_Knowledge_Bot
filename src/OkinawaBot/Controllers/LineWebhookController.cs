@@ -41,7 +41,7 @@ public class LineWebhookController : ControllerBase
                     message);
 
             // 暫時先不呼叫 LINE Reply API
-            Console.WriteLine(response.Message);
+            return Ok(response);
         }
 
         return Ok();
