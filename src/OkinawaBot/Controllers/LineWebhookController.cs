@@ -1,5 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using OkinawaBot.Application.Handlers;
+using Microsoft.AspNetCore.Mvc;
+using MediatR;
+using OkinawaBot.Application.Requests;
 using OkinawaBot.Models;
 
 namespace OkinawaBot.Controllers;
@@ -8,12 +9,11 @@ namespace OkinawaBot.Controllers;
 [Route("api/[controller]")]
 public class LineWebhookController : ControllerBase
 {
-    private readonly MessageHandler _messageHandler;
+    private readonly IMediator _mediator;
 
-    public LineWebhookController(
-        MessageHandler messageHandler)
+    public LineWebhookController(IMediator mediator)
     {
-        _messageHandler = messageHandler;
+        _mediator = mediator;
     }
 
     [HttpPost]
@@ -36,9 +36,8 @@ public class LineWebhookController : ControllerBase
             var message = lineEvent.Message.Text;
 
             var response =
-                await _messageHandler.HandleAsync(
-                    userId,
-                    message);
+                await _mediator.Send(
+                    new ProcessMessageCommand(userId, message));
 
             // 暫時先不呼叫 LINE Reply API
             return Ok(response);

@@ -74,7 +74,7 @@ public class SaveFlowHandler : IRequestHandler<SaveFlowCommand, BotResponse>
             };
         }
 
-        var request =
+        var saveRequest =
             new SaveTravelItemRequest
             {
                 Url = parseResult.Url!,
@@ -82,7 +82,7 @@ public class SaveFlowHandler : IRequestHandler<SaveFlowCommand, BotResponse>
                 Name = parseResult.Name!
             };
 
-        var result = await _saveService.SaveAsync(request);
+        var result = await _saveService.SaveAsync(saveRequest);
 
         if (result.Status == SaveResultStatus.Success)
         {
@@ -97,14 +97,14 @@ public class SaveFlowHandler : IRequestHandler<SaveFlowCommand, BotResponse>
         if (result.Status == SaveResultStatus.Duplicate)
         {
 
-            context.PendingSave = request;
+            context.PendingSave = saveRequest;
 
             _stateManager.SetState(userId,  ConversationState.SaveDuplicateConfirmation);
 
             return new BotResponse
             {
                 Message =
-                    $"名稱「{request.Name}」已經存在，是否仍要儲存？\n" +
+                    $"名稱「{saveRequest.Name}」已經存在，是否仍要儲存？\n" +
                     "請輸入 Continue 或 Return。"
             };
         }

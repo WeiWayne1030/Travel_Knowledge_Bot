@@ -17,7 +17,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
         builder.Configuration.GetConnectionString(
             "DefaultConnection")));
 
-//repositoryÀu¥ı³B²z
+//repositoryå„ªå…ˆè™•ç†
 builder.Services.AddScoped<ITravelItemRepository, TravelItemRepository>();
 
 //Application Services
@@ -26,23 +26,17 @@ builder.Services.AddScoped<QueryService>();
 builder.Services.AddScoped<EditService>();
 builder.Services.AddScoped<DeleteService>();
 
-//Application Flow
-builder.Services.AddScoped<SaveFlowHandler>();
-builder.Services.AddScoped<QueryFlowHandler>();
-builder.Services.AddScoped<EditFlowHandler>();
-builder.Services.AddScoped<DeleteFlowHandler>();
+//MediatR
+builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
 
 //Application Utilities
 builder.Services.AddScoped<BotCommandParser>();
 builder.Services.AddScoped<SaveInputParser>();
 
-//§Q¥ÎAddSingleton¨ú¥NAddScoped,Åı©Ò¦³ HTTP Request ¦@¥Î¦P¤@­Ó Dictionary => ¼È¸Ñ, ¤§«á¥ÎRedis°µ±±¨î
+//åˆ©ç”¨AddSingletonå–ä»£AddScoped,è®“æ‰€æœ‰ HTTP Request å…±ç”¨åŒä¸€å€‹ Dictionary => æš«è§£, ä¹‹å¾Œç”¨Redisåšæ§åˆ¶
 builder.Services.AddSingleton<ConversationStateManager>();
 
-//Handlers
-builder.Services.AddScoped<MessageHandler>();
-
-//·s¼Wcontroller
+//æ–°å¢controller
 builder.Services.AddControllers();
 
 builder.Services.AddEndpointsApiExplorer();
