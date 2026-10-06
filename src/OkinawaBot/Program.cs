@@ -11,8 +11,6 @@ using OkinawaBot.Infrastructure.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
-
 //Infrastructuer
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite(
@@ -43,6 +41,12 @@ builder.Services.AddSingleton<ConversationStateManager>();
 
 //Handlers
 builder.Services.AddScoped<MessageHandler>();
+
+//·s¼Wcontroller
+builder.Services.AddControllers();
+
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 

@@ -13,13 +13,13 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.0" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="10.2.3" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Controllers\" />
     <Folder Include="Domain\Rules\" />
-    <Folder Include="Infrastructure\Data\" />
-    <Folder Include="Infrastructure\Line\" />
+    <Folder Include="Infastructure\Data\" />
+    <Folder Include="Infastructure\Line\" />
     <Folder Include="Models\" />
   </ItemGroup>
 
