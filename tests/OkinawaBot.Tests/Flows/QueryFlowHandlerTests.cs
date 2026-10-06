@@ -1,4 +1,5 @@
-﻿using OkinawaBot.Application.Commands;
+using System.Threading;
+using OkinawaBot.Application.Commands;
 using OkinawaBot.Application.Flows;
 using OkinawaBot.Application.Models;
 using OkinawaBot.Application.Services;
@@ -45,9 +46,7 @@ public class QueryFlowHandlerTests
 
         // Act
         var response =
-            await handler.HandleAsync(
-                userId,
-                "Return");
+            await handler.Handle(new OkinawaBot.Application.Requests.QueryFlowCommand(userId, "Return"), CancellationToken.None);
 
         // Assert
         var context =
@@ -93,9 +92,7 @@ public class QueryFlowHandlerTests
 
         // Act
         var response =
-            await handler.HandleAsync(
-                userId,
-                "Restaurant");
+            await handler.Handle(new OkinawaBot.Application.Requests.QueryFlowCommand(userId, "Restaurant"), CancellationToken.None);
 
         // Assert
         var context =
@@ -161,9 +158,7 @@ public class QueryFlowHandlerTests
 
         // Act
         var response =
-            await handler.HandleAsync(
-                userId,
-                "Attraction");
+            await handler.Handle(new OkinawaBot.Application.Requests.QueryFlowCommand(userId, "Attraction"), CancellationToken.None);
 
         // Assert
         var context =

@@ -1,3 +1,4 @@
+using System.Threading;
 using OkinawaBot.Application.Commands;
 using OkinawaBot.Application.Flows;
 using OkinawaBot.Application.Input;
@@ -42,9 +43,7 @@ public class EditFlowHandlerTests
             userId,
             ConversationState.EditItemSelection);
 
-        var result = await _handler.HandleAsync(
-            userId,
-            "Return");
+        var result = await _handler.Handle(new OkinawaBot.Application.Requests.EditFlowCommand(userId, "Return"), CancellationToken.None);
 
         var context =
             _stateManager.GetOrCreate(userId);
@@ -67,9 +66,7 @@ public class EditFlowHandlerTests
             userId,
             ConversationState.EditItemSelection);
 
-        var result = await _handler.HandleAsync(
-            userId,
-            "1");
+        var result = await _handler.Handle(new OkinawaBot.Application.Requests.EditFlowCommand(userId, "1"), CancellationToken.None);
 
         var context =
             _stateManager.GetOrCreate(userId);
@@ -100,9 +97,7 @@ public class EditFlowHandlerTests
             userId,
             ConversationState.EditItemSelection);
 
-        var result = await _handler.HandleAsync(
-            userId,
-            "abc");
+        var result = await _handler.Handle(new OkinawaBot.Application.Requests.EditFlowCommand(userId, "abc"), CancellationToken.None);
 
         var context =
             _stateManager.GetOrCreate(userId);
@@ -133,9 +128,7 @@ public class EditFlowHandlerTests
             userId,
             ConversationState.EditItemSelection);
 
-        var result = await _handler.HandleAsync(
-            userId,
-            "2");
+        var result = await _handler.Handle(new OkinawaBot.Application.Requests.EditFlowCommand(userId, "2"), CancellationToken.None);
 
         var context =
             _stateManager.GetOrCreate(userId);
@@ -166,9 +159,7 @@ public class EditFlowHandlerTests
             userId,
             ConversationState.EditItemSelection);
 
-        var result = await _handler.HandleAsync(
-            userId,
-            "1");
+        var result = await _handler.Handle(new OkinawaBot.Application.Requests.EditFlowCommand(userId, "1"), CancellationToken.None);
 
         var context =
             _stateManager.GetOrCreate(userId);
@@ -196,13 +187,11 @@ public class EditFlowHandlerTests
             userId,
             ConversationState.EditDataInput);
 
-        var result = await _handler.HandleAsync(
-            userId,
-            """
+        var result = await _handler.Handle(new OkinawaBot.Application.Requests.EditFlowCommand(userId, """
         https://example.com
         #Attraction
         美麗海水族館
-        """);
+        """), CancellationToken.None);
 
         var context =
             _stateManager.GetOrCreate(userId);
@@ -239,9 +228,7 @@ public class EditFlowHandlerTests
         context.CurrentItemId =
             item.Id;
 
-        var result = await _handler.HandleAsync(
-            userId,
-            "輸入錯誤");
+        var result = await _handler.Handle(new OkinawaBot.Application.Requests.EditFlowCommand(userId, "輸入錯誤"), CancellationToken.None);
 
         Assert.Equal(
             ConversationState.EditDataInput,
@@ -275,13 +262,11 @@ public class EditFlowHandlerTests
         context.CurrentItemId =
             item.Id;
 
-        var result = await _handler.HandleAsync(
-            userId,
-            """
+        var result = await _handler.Handle(new OkinawaBot.Application.Requests.EditFlowCommand(userId, """
         https://new.example.com
         #Attraction
         美麗海水族館
-        """);
+        """), CancellationToken.None);
 
         var updatedItem =
             await _repository.FindByIdAsync(item.Id);
@@ -338,13 +323,11 @@ public class EditFlowHandlerTests
         context.CurrentItemId =
             secondItem.Id;
 
-        var result = await _handler.HandleAsync(
-            userId,
-            """
+        var result = await _handler.Handle(new OkinawaBot.Application.Requests.EditFlowCommand(userId, """
         https://new.example.com
         #Attraction
         美麗海水族館
-        """);
+        """), CancellationToken.None);
 
         Assert.Equal(
             ConversationState.EditDuplicateConfirmation,
@@ -391,9 +374,7 @@ public class EditFlowHandlerTests
                 Category = "Attraction"
             };
 
-        var result = await _handler.HandleAsync(
-            userId,
-            "Return");
+        var result = await _handler.Handle(new OkinawaBot.Application.Requests.EditFlowCommand(userId, "Return"), CancellationToken.None);
 
         Assert.Equal(
             ConversationState.MainMenu,
@@ -447,9 +428,7 @@ public class EditFlowHandlerTests
                 Category = "Restaurant"
             };
 
-        var result = await _handler.HandleAsync(
-            userId,
-            "Continue");
+        var result = await _handler.Handle(new OkinawaBot.Application.Requests.EditFlowCommand(userId, "Continue"), CancellationToken.None);
 
         var updatedItem =
             await _repository.FindByIdAsync(item.Id);

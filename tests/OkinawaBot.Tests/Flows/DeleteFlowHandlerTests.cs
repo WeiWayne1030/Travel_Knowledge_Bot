@@ -1,3 +1,4 @@
+using System.Threading;
 using OkinawaBot.Application.Commands;
 using OkinawaBot.Application.Flows;
 using OkinawaBot.Application.Services;
@@ -38,9 +39,7 @@ public class DeleteFlowHandlerTests
 
         // Act
         var response =
-            await handler.HandleAsync(
-                "test-user",
-                "1");
+            await handler.Handle(new OkinawaBot.Application.Requests.DeleteFlowCommand("test-user", "1"), CancellationToken.None);
 
         // Assert
         var context =
@@ -92,9 +91,7 @@ public class DeleteFlowHandlerTests
 
         // Act
         var response =
-            await handler.HandleAsync(
-                "test-user",
-                "1");
+            await handler.Handle(new OkinawaBot.Application.Requests.DeleteFlowCommand("test-user", "1"), CancellationToken.None);
 
         // Assert
         var context =
@@ -158,9 +155,7 @@ public class DeleteFlowHandlerTests
 
         // Act
         var response =
-            await handler.HandleAsync(
-                "test-user",
-                "abc");
+            await handler.Handle(new OkinawaBot.Application.Requests.DeleteFlowCommand("test-user", "abc"), CancellationToken.None);
 
         // Assert
         var context =
@@ -212,9 +207,7 @@ public class DeleteFlowHandlerTests
 
         // Act
         var response =
-            await handler.HandleAsync(
-                "test-user",
-                "99");
+            await handler.Handle(new OkinawaBot.Application.Requests.DeleteFlowCommand("test-user", "99"), CancellationToken.None);
 
         // Assert
         var context =
@@ -262,9 +255,7 @@ public class DeleteFlowHandlerTests
 
         // Act
         var response =
-            await handler.HandleAsync(
-                "test-user",
-                "Return");
+            await handler.Handle(new OkinawaBot.Application.Requests.DeleteFlowCommand("test-user", "Return"), CancellationToken.None);
 
         // Assert
         Assert.Equal(
@@ -320,9 +311,7 @@ public class DeleteFlowHandlerTests
 
         // Act
         var response =
-            await handler.HandleAsync(
-                "test-user",
-                "Continue");
+            await handler.Handle(new OkinawaBot.Application.Requests.DeleteFlowCommand("test-user", "Continue"), CancellationToken.None);
 
         // Assert
         Assert.Equal(
@@ -383,9 +372,7 @@ public class DeleteFlowHandlerTests
 
         // Act
         var response =
-            await handler.HandleAsync(
-                "test-user",
-                "hello");
+            await handler.Handle(new OkinawaBot.Application.Requests.DeleteFlowCommand("test-user", "hello"), CancellationToken.None);
 
         // Assert
         Assert.Equal(

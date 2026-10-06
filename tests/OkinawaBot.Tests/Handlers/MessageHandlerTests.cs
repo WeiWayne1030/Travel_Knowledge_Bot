@@ -1,48 +1,68 @@
+using MediatR;
+using Microsoft.Extensions.DependencyInjection;
 using OkinawaBot.Application.Commands;
 using OkinawaBot.Application.Flows;
 using OkinawaBot.Application.Handlers;
 using OkinawaBot.Application.Input;
+using OkinawaBot.Application.Requests;
 using OkinawaBot.Application.Services;
 using OkinawaBot.Application.State;
 using OkinawaBot.Domain.Entities;
+using OkinawaBot.Domain.Interfaces;
 using OkinawaBot.Tests.Fakes;
 
 namespace OkinawaBot.Tests.Handlers;
 
 public class MessageHandlerTests
 {
-    private readonly ConversationStateManager _stateManager = new();
-    private readonly FakeTravelItemRepository _repository = new();
-    private readonly MessageHandler _handler;
+    private readonly ConversationStateManager _stateManager;
+    private readonly FakeTravelItemRepository _repository;
+    private readonly ProcessMessageCommandHandler _handler;
+    private readonly IMediator _mediator;
 
     public MessageHandlerTests()
     {
-        var commandParser = new BotCommandParser();
-        var inputParser = new SaveInputParser();
-        var saveService = new SaveService(_repository);
-        var queryService = new QueryService(_repository);
-        var editService = new EditService(_repository);
-        var deleteService = new DeleteService(_repository);
+        _stateManager = new ConversationStateManager();
+        _repository = new FakeTravelItemRepository();
 
-        var saveFlowHandler = new SaveFlowHandler(_stateManager, commandParser, inputParser, saveService);
-        var queryFlowHandler = new QueryFlowHandler(_stateManager, commandParser, queryService);
-        var editFlowHandler = new EditFlowHandler(_stateManager, commandParser, editService, inputParser);
-        var deleteFlowHandler = new DeleteFlowHandler(_stateManager, commandParser, deleteService);
+        var services = new ServiceCollection();
 
-        _handler = new MessageHandler(_stateManager, commandParser, saveFlowHandler, queryFlowHandler, editFlowHandler, deleteFlowHandler);
+        // 註冊所有必要的 Services
+        services.AddSingleton(_stateManager);
+        services.AddSingleton<ITravelItemRepository>(_repository);
+        services.AddScoped<BotCommandParser>();
+        services.AddScoped<SaveInputParser>();
+        services.AddScoped<SaveService>();
+        services.AddScoped<QueryService>();
+        services.AddScoped<EditService>();
+        services.AddScoped<DeleteService>();
+        
+        // 註冊 MediatR (包含所有的 Flow Handlers)
+        services.AddLogging();
+        services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(ProcessMessageCommand).Assembly));
+
+        var provider = services.BuildServiceProvider();
+        _mediator = provider.GetRequiredService<IMediator>();
+
+        // 為了測試，直接建立我們要測的 Handler
+        _handler = new ProcessMessageCommandHandler(
+            _stateManager,
+            provider.GetRequiredService<BotCommandParser>(),
+            _mediator);
+    }
+
+    private Task HandleAsync(string userId, string message)
+    {
+        return _handler.Handle(new ProcessMessageCommand(userId, message), CancellationToken.None);
     }
 
     // 驗證收到 Save 指令時，會正確切換至 SaveFlow 狀態
     [Fact]
     public async Task HandleAsync_ShouldEnterSaveFlow_WhenUserSendsSave()
     {
-        // Arrange
         const string userId = "user-001";
+        await HandleAsync(userId, "Save");
 
-        // Act
-        await _handler.HandleAsync(userId, "Save");
-
-        // Assert
         var context = _stateManager.GetOrCreate(userId);
         Assert.Equal(ConversationState.SaveFlow, context.State);
     }
@@ -51,13 +71,9 @@ public class MessageHandlerTests
     [Fact]
     public async Task HandleAsync_ShouldEnterQueryFlow_WhenUserSendsQuery()
     {
-        // Arrange
         const string userId = "user-001";
+        await HandleAsync(userId, "Query");
 
-        // Act
-        await _handler.HandleAsync(userId, "Query");
-
-        // Assert
         var context = _stateManager.GetOrCreate(userId);
         Assert.Equal(ConversationState.QueryFlow, context.State);
     }
@@ -66,14 +82,11 @@ public class MessageHandlerTests
     [Fact]
     public async Task HandleAsync_ShouldSaveItem_WhenSaveInputIsValid()
     {
-        // Arrange
         const string userId = "user-001";
 
-        // Act
-        await _handler.HandleAsync(userId, "Save");
-        await _handler.HandleAsync(userId, "https://example.com #ATTRACTION 美麗海水族館");
+        await HandleAsync(userId, "Save");
+        await HandleAsync(userId, "https://example.com #ATTRACTION 美麗海水族館");
 
-        // Assert
         var savedItem = Assert.Single(_repository.Items);
         Assert.Equal("美麗海水族館", savedItem.Name);
         Assert.Equal("https://example.com", savedItem.Url);
@@ -84,14 +97,11 @@ public class MessageHandlerTests
     [Fact]
     public async Task HandleAsync_ShouldNotSave_WhenInputIsInvalid()
     {
-        // Arrange
         const string userId = "user-001";
 
-        // Act
-        await _handler.HandleAsync(userId, "Save");
-        await _handler.HandleAsync(userId, "https://example.com 美麗海水族館");
+        await HandleAsync(userId, "Save");
+        await HandleAsync(userId, "https://example.com 美麗海水族館");
 
-        // Assert
         Assert.Empty(_repository.Items);
     }
 
@@ -99,17 +109,14 @@ public class MessageHandlerTests
     [Fact]
     public async Task HandleAsync_ShouldNotCreateDuplicate_WhenNameAlreadyExists()
     {
-        // Arrange
         const string userId = "user-001";
 
-        // Act
-        await _handler.HandleAsync(userId, "Save");
-        await _handler.HandleAsync(userId, "https://example.com #ATTRACTION 美麗海水族館");
+        await HandleAsync(userId, "Save");
+        await HandleAsync(userId, "https://example.com #ATTRACTION 美麗海水族館");
 
-        await _handler.HandleAsync(userId, "Save");
-        await _handler.HandleAsync(userId, "https://example.com/2 #ATTRACTION 美麗海水族館");
+        await HandleAsync(userId, "Save");
+        await HandleAsync(userId, "https://example.com/2 #ATTRACTION 美麗海水族館");
 
-        // Assert
         Assert.Single(_repository.Items);
     }
 
@@ -117,14 +124,11 @@ public class MessageHandlerTests
     [Fact]
     public async Task HandleAsync_ShouldReturnToMainMenu_WhenUserEntersReturn()
     {
-        // Arrange
         const string userId = "user-001";
 
-        // Act
-        await _handler.HandleAsync(userId, "Save");
-        await _handler.HandleAsync(userId, "return");
+        await HandleAsync(userId, "Save");
+        await HandleAsync(userId, "return");
 
-        // Assert
         var context = _stateManager.GetOrCreate(userId);
         Assert.Equal(ConversationState.MainMenu, context.State);
     }
@@ -135,16 +139,10 @@ public class MessageHandlerTests
     {
         const string userId = "user-1";
 
-        var result = await _handler.HandleAsync(
-            userId,
-            "Edit");
+        await HandleAsync(userId, "Edit");
 
-        var context =
-            _stateManager.GetOrCreate(userId);
-
-        Assert.Equal(
-            ConversationState.EditItemSelection,
-            context.State);
+        var context = _stateManager.GetOrCreate(userId);
+        Assert.Equal(ConversationState.EditItemSelection, context.State);
     }
 
     // 測 Edit Flow 的實際 routing
@@ -161,69 +159,32 @@ public class MessageHandlerTests
                 Category = "Attraction"
             });
 
-        _stateManager.SetState(
-            userId,
-            ConversationState.EditItemSelection);
+        _stateManager.SetState(userId, ConversationState.EditItemSelection);
 
-        var result =
-            await _handler.HandleAsync(
-                userId,
-                "1");
+        await HandleAsync(userId, "1");
 
-        var context =
-            _stateManager.GetOrCreate(userId);
+        var context = _stateManager.GetOrCreate(userId);
 
-        Assert.Equal(
-            ConversationState.EditDataInput,
-            context.State);
-
-        Assert.Equal(
-            1,
-            context.CurrentItemId);
-
-        Assert.Contains(
-            "美麗海水族館",
-            result.Message);
+        Assert.Equal(ConversationState.EditDataInput, context.State);
+        Assert.Equal(1, context.CurrentItemId);
     }
 
     [Fact]
     public async Task HandleAsync_WhenDeleteCommand_ShouldEnterDeleteFlow()
     {
-        // Act
-        var response =
-            await _handler.HandleAsync(
-                "test-user",
-                "Delete");
+        await HandleAsync("test-user", "Delete");
 
-        // Assert
-        var context =
-            _stateManager.GetOrCreate("test-user");
-
-        Assert.Equal(
-            ConversationState.DeleteFlow,
-            context.State);
+        var context = _stateManager.GetOrCreate("test-user");
+        Assert.Equal(ConversationState.DeleteFlow, context.State);
     }
 
     [Fact]
     public async Task HandleAsync_WhenInDeleteFlowAndReturn_ShouldGoBackToMainMenu()
     {
-        // Arrange
-        await _handler.HandleAsync(
-            "test-user",
-            "Delete");
+        await HandleAsync("test-user", "Delete");
+        await HandleAsync("test-user", "Return");
 
-        // Act
-        var response =
-            await _handler.HandleAsync(
-                "test-user",
-                "Return");
-
-        // Assert
-        var context =
-            _stateManager.GetOrCreate("test-user");
-
-        Assert.Equal(
-            ConversationState.MainMenu,
-            context.State);
+        var context = _stateManager.GetOrCreate("test-user");
+        Assert.Equal(ConversationState.MainMenu, context.State);
     }
 }

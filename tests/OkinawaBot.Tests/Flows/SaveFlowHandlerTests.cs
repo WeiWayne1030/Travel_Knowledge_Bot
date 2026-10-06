@@ -1,3 +1,4 @@
+using System.Threading;
 using OkinawaBot.Application.Commands;
 using OkinawaBot.Application.Flows;
 using OkinawaBot.Application.Input;
@@ -45,9 +46,7 @@ public class SaveFlowHandlerTests
 
         // Act
         var response =
-            await handler.HandleAsync(
-                userId,
-                "Return");
+            await handler.Handle(new OkinawaBot.Application.Requests.SaveFlowCommand(userId, "Return"), CancellationToken.None);
 
         // Assert
         var context =
@@ -106,9 +105,7 @@ public class SaveFlowHandlerTests
 
         // Act
         var response =
-            await handler.HandleAsync(
-                userId,
-                input);
+            await handler.Handle(new OkinawaBot.Application.Requests.SaveFlowCommand(userId, input), CancellationToken.None);
 
         // Assert
         var context =
@@ -164,9 +161,7 @@ public class SaveFlowHandlerTests
 
         // Act
         var response =
-            await handler.HandleAsync(
-                userId,
-                input);
+            await handler.Handle(new OkinawaBot.Application.Requests.SaveFlowCommand(userId, input), CancellationToken.None);
 
         // Assert
         var context =
@@ -223,9 +218,7 @@ public class SaveFlowHandlerTests
 
         // Act
         var response =
-            await handler.HandleAsync(
-                userId,
-                input);
+            await handler.Handle(new OkinawaBot.Application.Requests.SaveFlowCommand(userId, input), CancellationToken.None);
 
         // Assert
         var context =
@@ -284,15 +277,11 @@ public class SaveFlowHandlerTests
         美麗海水族館
         """;
 
-        await handler.HandleAsync(
-            userId,
-            input);
+        await handler.Handle(new OkinawaBot.Application.Requests.SaveFlowCommand(userId, input), CancellationToken.None);
 
         // Act
         var response =
-            await handler.HandleAsync(
-                userId,
-                "Continue");
+            await handler.Handle(new OkinawaBot.Application.Requests.SaveFlowCommand(userId, "Continue"), CancellationToken.None);
 
         // Assert
         var context =
@@ -351,15 +340,11 @@ public class SaveFlowHandlerTests
         美麗海水族館
         """;
 
-        await handler.HandleAsync(
-            userId,
-            input);
+        await handler.Handle(new OkinawaBot.Application.Requests.SaveFlowCommand(userId, input), CancellationToken.None);
 
         // Act
         var response =
-            await handler.HandleAsync(
-                userId,
-                "Return");
+            await handler.Handle(new OkinawaBot.Application.Requests.SaveFlowCommand(userId, "Return"), CancellationToken.None);
 
         // Assert
         var context =
