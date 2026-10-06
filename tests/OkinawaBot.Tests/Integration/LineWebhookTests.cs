@@ -291,4 +291,100 @@ public class LineWebhookTests
             Assert.Equal("NewCat", updatedItem.Category);
         }
     }
+
+    [Fact]
+    public async Task DeleteFlow_ShouldDeleteTravelItem()
+    {
+        // Arrange
+        var client = _factory.CreateClient();
+        var userId = "integration-delete-user";
+        int itemId;
+        
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var item = new OkinawaBot.Domain.Entities.TravelItem
+            {
+                Name = "要被刪除的景點_" + Guid.NewGuid().ToString(),
+                Url = "https://example.com/delete-me",
+                Category = "DeleteCat"
+            };
+            db.TravelItems.Add(item);
+            await db.SaveChangesAsync();
+            itemId = item.Id;
+        }
+
+        // Act 1: 使用者輸入 Delete 進入刪除模式
+        var deleteCommandRequest = new LineWebhookRequest
+        {
+            Events =
+            [
+                new LineEvent
+                {
+                    Type = "message",
+                    Source = new LineSource { UserId = userId },
+                    Message = new LineMessage { Type = "text", Text = "Delete" }
+                }
+            ]
+        };
+
+        var firstResponse = await client.PostAsJsonAsync("/api/LineWebhook", deleteCommandRequest);
+        Assert.True(firstResponse.IsSuccessStatusCode);
+
+        // 動態取得在資料庫中該筆資料的編號
+        int selectedIndex = 1;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var allItems = await db.TravelItems.ToListAsync();
+            selectedIndex = allItems.FindIndex(x => x.Id == itemId) + 1;
+        }
+
+        // Act 2: 使用者輸入編號選擇資料
+        var selectItemRequest = new LineWebhookRequest
+        {
+            Events =
+            [
+                new LineEvent
+                {
+                    Type = "message",
+                    Source = new LineSource { UserId = userId },
+                    Message = new LineMessage { Type = "text", Text = selectedIndex.ToString() }
+                }
+            ]
+        };
+
+        var secondResponse = await client.PostAsJsonAsync("/api/LineWebhook", selectItemRequest);
+        Assert.True(secondResponse.IsSuccessStatusCode);
+
+        // Act 3: 使用者輸入 Continue 確認刪除
+        var confirmRequest = new LineWebhookRequest
+        {
+            Events =
+            [
+                new LineEvent
+                {
+                    Type = "message",
+                    Source = new LineSource { UserId = userId },
+                    Message = new LineMessage { Type = "text", Text = "Continue" }
+                }
+            ]
+        };
+
+        var thirdResponse = await client.PostAsJsonAsync("/api/LineWebhook", confirmRequest);
+        Assert.True(thirdResponse.IsSuccessStatusCode);
+        
+        // Assert: 確認回傳內容
+        var responseBody = await thirdResponse.Content.ReadAsStringAsync();
+        Assert.Contains("刪除成功", responseBody);
+        
+        // Assert: 確認 Database 資料確實已被刪除
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var deletedItem = await db.TravelItems.FindAsync(itemId);
+            
+            Assert.Null(deletedItem);
+        }
+    }
 }
