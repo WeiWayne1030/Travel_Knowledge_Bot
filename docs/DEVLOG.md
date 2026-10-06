@@ -19,6 +19,8 @@
 | 6 | 2026-10-05 10:46 | `bc07934` | SRS 與實作對齊 | Save 輸入格式定為 `URL #Category Name`；FR-016 改成先確認再儲存；新增 DEVLOG |
 | 7 | 2026-10-05 10:56 | `66b3467` | 技術債修正 (訊息與語言) | `MessageHandler` 改為回傳 `Task<BotResponse>`；驗證訊息統一為繁體中文 |
 | 8 | 2026-10-05 11:05 | `6f3d4de` | 技術債與命名清理 | 修正 `Infrastructure` 拼字、`ConversationState.cs` 檔名、`ConcurrentDictionary` 狀態管理、刪除 `test.cs` 及取消追蹤 `bin/obj` 產物 |
+| 9 | 2026-10-06 | 待定 | 補齊所有流程與環境修復 | 完成 Query、Edit、Delete Flow，修復 MessageHandler 測試，並修正 Swagger 在 .NET 9 下的衝突與啟動設定 |
+| 10 | 2026-10-06 | 待定 | 補齊所有流程的整合測試 | 在 `LineWebhookTests.cs` 中補上 Query、Edit、Delete Flow 的 Webhook 整合測試，處理測試間 DB 資料互相污染問題。目前 64 測試全數通過 |
 
 ---
 
@@ -134,6 +136,34 @@
   - 修正 `Program.cs` 註解字元編碼。
   - 透過 `git rm --cached` 移除誤追蹤的 `bin/` 與 `obj/` 建置檔。
 
+### Phase 9 — 補齊 Query、Edit、Delete 流程與修復 Swagger
+
+**目標**：把 MVP 中剩下的三個主要對話流程做完，並確保單元測試與開發環境正常。
+
+- **實作完整 Flow**：
+  - `QueryFlowHandler`：能依照分類或是關鍵字查詢旅遊資訊。
+  - `EditFlowHandler`：選擇要編輯的項目 -> 重新輸入新資料 -> 檢查重複名稱並進行確認 (`EditDuplicateConfirmation`)。
+  - `DeleteFlowHandler`：選擇要刪除的項目 -> 進行二次確認 (`DeleteConfirmation`)。
+- **整合 MessageHandler**：將上述 Handler 依賴全數注入，並修復 `HandleMainMenuAsync` 的 `Task` 回傳問題。現在從主選單輸入 Save、Query、Edit、Delete 都會回傳相對應的提示詞並切換狀態。
+- **完善單元測試**：在 `MessageHandlerTests`、`EditFlowHandlerTests`、`DeleteFlowHandlerTests` 等補齊狀態切換和返回(`Return`)行為的測試，目前專案內 60 項單元測試全數通過。
+- **修復 Swagger 開發環境**：
+  - 在 .NET 9 中，原本加入的 `Microsoft.AspNetCore.OpenApi` 與 `Swashbuckle.AspNetCore` 有型別版本衝突，移除前者讓 Swashbuckle 正常運作。
+  - 調整 `launchSettings.json`，於 `http`、`https` 與 `IIS Express` 配置補上 `"launchBrowser": true` 與 `"launchUrl": "swagger"`，使 `dotnet run` 能夠順利彈出測試介面。
+
+### Phase 10 — 補齊所有流程的整合測試
+
+**目標**：確保在實際 Web API (`/api/LineWebhook`) 收到各項 Flow 對應指令時，整個系統能正確回應，並且操作真正的 (In-Memory) 資料庫。
+
+- **新增測試案例**：
+  - `QueryFlow_ShouldReturnQueriedItems`：驗證輸入 Query 並指定分類後，能正確拉出在資料庫預設好的對應資料。
+  - `EditFlow_ShouldUpdateTravelItem`：驗證能正確走完選定編號、輸入新資料並確保資料庫確實更新的流程。
+  - `DeleteFlow_ShouldDeleteTravelItem`：驗證能順利選定編號、經過 Continue 刪除確認後，確保資料庫清空該筆紀錄。
+- **排除整合測試陷阱 (Test Isolation)**：
+  - 由於所有整合測試共用一個由 WebApplicationFactory 建置的 `test.db`，先前的測試插入了許多假資料並殘留在其中。如果固定傳送選單第一項 (`"1"`) 很容易選錯。
+  - **解決方式**：測試碼改為用 EF Core 動態撈出剛才新增的資料在目前資料庫中的 `index`，送出該 `index` 確保操作對象正確。
+  - **名稱防呆衝突**：Edit Flow 修改資料時，為了避免跟之前的測試殘留資料名稱重複而進到二次確認畫面，將測試用資料改以 `Guid` 產生隨機名稱，確保永遠可以走通 Happy Path。
+- **成果**：專案涵蓋 64 項單元與整合測試，全部執行通過 (`Passed`)，為 LINE Webhook 的 Controller 接接鋪好了安全網。
+
 ---
 
 ## ✅ SRS 需求實作進度
@@ -141,20 +171,20 @@
 | 需求 | 說明 | 狀態 |
 |------|------|------|
 | FR-001 | 啟動 Bot 與主選單歡迎訊息 | ✅ 已完成（主選單已支援指令提示與歡迎訊息） |
-| FR-002 | 指令選擇 | 🟡 已能切換狀態，但只有 Save Flow 有實作 |
-| FR-003 | 對話狀態管理 | ✅ 已完成（已支援進入 Save Flow 的格式提示 AC-003-01） |
-| FR-004 | Return 指令 | 🟡 Save Flow 已支援，其他 Flow 還沒有 |
+| FR-002 | 指令選擇 | ✅ 已完成（支援 Save、Query、Edit、Delete 與 Return） |
+| FR-003 | 對話狀態管理 | ✅ 已完成（已支援進入各 Flow 的格式提示 AC-003-01） |
+| FR-004 | Return 指令 | ✅ 已完成（所有 Flow 皆支援返回） |
 | FR-005 | 解析 URL / Name / Category | ✅ 已完成（格式 `URL #Category Name`，BR-030） |
 | FR-006 | 儲存旅遊資訊 | ✅ 已完成 |
 | FR-007 | 使用者自訂分類 | ✅ 已完成（直接採用使用者輸入） |
-| FR-008 | 顯示可查詢分類 | ⬜ 未實作 |
-| FR-009 | 依分類查詢 | ⬜ 未實作（Repository 已有 `FindByCategoryAsync`） |
+| FR-008 | 顯示可查詢分類 | ✅ 已完成 |
+| FR-009 | 依分類查詢 | ✅ 已完成 |
 | FR-010 | 缺 URL 的處理 | 🟡 有檢查缺少，但不驗證 URL 格式 |
 | FR-011 | 缺 Category 的處理 | ✅ 已完成 |
 | FR-012 | 輸入格式錯誤的處理 | 🟡 有錯誤訊息，但沒有附上正確格式範例 |
 | FR-013 | 缺 Name 的處理 | ✅ 已完成 |
-| FR-014 | 編輯 | ⬜ 未實作 |
-| FR-015 | 刪除 | ⬜ 未實作 |
+| FR-014 | 編輯 | ✅ 已完成（包含確認流程） |
+| FR-015 | 刪除 | ✅ 已完成（包含確認流程） |
 | FR-016 | 名稱重複確認 | ✅ 已完成（Continue / Return 確認流程） |
 | — | LINE Webhook 串接 | ⬜ 未實作（`Controllers/`、`Models/`、`Infrastructure/Line/` 目前是空的） |
 
@@ -169,10 +199,10 @@
 
 ## 🔜 下一步規劃
 
-1. 實作 Query Flow（FR-008、FR-009）。
-2. 實作 Edit Flow（FR-014）和 Delete Flow（FR-015）。
-3. 串接 LINE Messaging API：`LineWebhookController`、簽章驗證、`LineClient` 回覆訊息。
-4. 建立 GitHub Actions CI（`dotnet build` + `dotnet test`）。
+1. 串接 LINE Messaging API：實作 `LineWebhookController`、簽章驗證、以及使用 `LineClient` 進行訊息回覆。
+2. 加入 URL 格式驗證功能（改善 FR-010）與完整的錯誤訊息範例（改善 FR-012）。
+3. 建立 GitHub Actions CI（包含 `dotnet build` + `dotnet test`）。
+4. 考慮加入「系統支援的分類」白名單或輔助（解決 FR-008 延伸問題）。
 
 ---
 
