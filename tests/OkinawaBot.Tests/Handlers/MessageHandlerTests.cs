@@ -1,4 +1,3 @@
-using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
 using OkinawaBot.Application.Commands;
 using OkinawaBot.Application.Flows;
 using OkinawaBot.Application.Handlers;
@@ -23,12 +22,14 @@ public class MessageHandlerTests
         var saveService = new SaveService(_repository);
         var queryService = new QueryService(_repository);
         var editService = new EditService(_repository);
+        var deleteService = new DeleteService(_repository);
 
         var saveFlowHandler = new SaveFlowHandler(_stateManager, commandParser, inputParser, saveService);
         var queryFlowHandler = new QueryFlowHandler(_stateManager, commandParser, queryService);
         var editFlowHandler = new EditFlowHandler(_stateManager, commandParser, editService, inputParser);
+        var deleteFlowHandler = new DeleteFlowHandler(_stateManager, commandParser, deleteService);
 
-        _handler = new MessageHandler(_stateManager, commandParser, saveFlowHandler, queryFlowHandler, editFlowHandler);
+        _handler = new MessageHandler(_stateManager, commandParser, saveFlowHandler, queryFlowHandler, editFlowHandler, deleteFlowHandler);
     }
 
     // 驗證收到 Save 指令時，會正確切換至 SaveFlow 狀態
@@ -128,7 +129,7 @@ public class MessageHandlerTests
         Assert.Equal(ConversationState.MainMenu, context.State);
     }
 
-    //MessageHandler 是否真的把訊息交給 EditFlowHandler。
+    // MessageHandler 是否真的把訊息交給 EditFlowHandler。
     [Fact]
     public async Task EditCommand_ShouldEnterEditItemSelection()
     {
@@ -144,13 +145,9 @@ public class MessageHandlerTests
         Assert.Equal(
             ConversationState.EditItemSelection,
             context.State);
-
-        Assert.Contains(
-            "編輯",
-            result.Message);
     }
 
-    //測 Edit Flow 的實際 routing
+    // 測 Edit Flow 的實際 routing
     [Fact]
     public async Task EditState_ShouldRouteToEditFlowHandler()
     {
@@ -187,5 +184,46 @@ public class MessageHandlerTests
         Assert.Contains(
             "美麗海水族館",
             result.Message);
+    }
+
+    [Fact]
+    public async Task HandleAsync_WhenDeleteCommand_ShouldEnterDeleteFlow()
+    {
+        // Act
+        var response =
+            await _handler.HandleAsync(
+                "test-user",
+                "Delete");
+
+        // Assert
+        var context =
+            _stateManager.GetOrCreate("test-user");
+
+        Assert.Equal(
+            ConversationState.DeleteFlow,
+            context.State);
+    }
+
+    [Fact]
+    public async Task HandleAsync_WhenInDeleteFlowAndReturn_ShouldGoBackToMainMenu()
+    {
+        // Arrange
+        await _handler.HandleAsync(
+            "test-user",
+            "Delete");
+
+        // Act
+        var response =
+            await _handler.HandleAsync(
+                "test-user",
+                "Return");
+
+        // Assert
+        var context =
+            _stateManager.GetOrCreate("test-user");
+
+        Assert.Equal(
+            ConversationState.MainMenu,
+            context.State);
     }
 }

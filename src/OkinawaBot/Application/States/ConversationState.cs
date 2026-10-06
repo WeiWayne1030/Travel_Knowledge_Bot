@@ -14,4 +14,5 @@ public enum ConversationState
     EditDuplicateConfirmation,
 
     DeleteFlow,
+    DeleteConfirmation,
 }

@@ -12,19 +12,22 @@ public class MessageHandler
     private readonly SaveFlowHandler _saveFlowHandler;
     private readonly QueryFlowHandler _queryFlowHandler;
     private readonly EditFlowHandler _editFlowHandler;
+    private readonly DeleteFlowHandler _deleteFlowHandler;
 
     public MessageHandler(
         ConversationStateManager stateManager,
         BotCommandParser commandParser,
         SaveFlowHandler saveFlowHandler,
         QueryFlowHandler queryFlowHandler,
-        EditFlowHandler editFlowHandler)
+        EditFlowHandler editFlowHandler,
+        DeleteFlowHandler deleteFlowHandler)
     {
         _stateManager = stateManager;
         _commandParser = commandParser;
         _saveFlowHandler = saveFlowHandler;
         _queryFlowHandler = queryFlowHandler;
         _editFlowHandler = editFlowHandler;
+        _deleteFlowHandler = deleteFlowHandler;
     }
 
     public async Task<BotResponse> HandleAsync(
@@ -68,6 +71,14 @@ public class MessageHandler
                 ConversationState.EditDuplicateConfirmation)
         {
             return await _editFlowHandler.HandleAsync(
+                userId,
+                message);
+        }
+
+        if (context.State == ConversationState.DeleteFlow ||
+        context.State == ConversationState.DeleteConfirmation)
+        {
+            return await _deleteFlowHandler.HandleAsync(
                 userId,
                 message);
         }
