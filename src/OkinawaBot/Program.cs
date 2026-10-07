@@ -26,6 +26,15 @@ builder.Services.AddScoped<QueryService>();
 builder.Services.AddScoped<EditService>();
 builder.Services.AddScoped<DeleteService>();
 
+// LINE Messaging API
+//綁定lineBotOptions=>config中的LineBot設定
+builder.Services.Configure<OkinawaBot.Infrastructure.Line.LineBotOptions>(
+    builder.Configuration.GetSection(OkinawaBot.Infrastructure.Line.LineBotOptions.SectionName));
+//綁定LineSignatureValidator(防偽簽名)
+builder.Services.AddSingleton<OkinawaBot.Infrastructure.Line.LineSignatureValidator>();
+//使用HttpClientFactory管理HttpClient->LineClient(LineMessagingAPI)
+builder.Services.AddHttpClient<OkinawaBot.Infrastructure.Line.LineClient>();
+
 //MediatR
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
 
