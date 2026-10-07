@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  okinawabot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: okinawabot_app
+    ports:
+      - "8080:8080"
+    environment:
+      # 覆寫 appsettings.json 中的 Redis 連線字串，指向下方的 redis 服務
+      - ConnectionStrings__RedisConnection=redis:6379
+      # 如果需要，這裡也可以用環境變數帶入 Line Bot 的金鑰
+      # - LineBot__ChannelSecret=你的Secret
+      # - LineBot__ChannelAccessToken=你的Token
+    depends_on:
+      - redis
+    volumes:
+      # 將 SQLite 資料庫掛載出來，確保 Bot 容器重啟時資料不會遺失
+      - ./data:/app/data
+    # 這裡順便把 SQLite 的路徑改到掛載的資料夾
+    command: ["dotnet", "OkinawaBot.dll", "--ConnectionStrings:DefaultConnection=Data Source=/app/data/okinawa.db"]
+
+  redis:
+    image: redis:alpine
+    container_name: okinawabot_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      # 將 Redis 的資料持久化，避免重啟後對話狀態遺失
+      - redis_data:/data
+    command: redis-server --appendonly yes
+
+volumes:
+  redis_data:
