@@ -29,39 +29,42 @@ public class ProcessMessageCommandHandler : IRequestHandler<ProcessMessageComman
 
         var context = _stateManager.GetOrCreate(userId);
 
+        BotResponse response;
+
         if (context.State == ConversationState.MainMenu)
         {
-            return HandleMainMenu(userId, message);
+            response = HandleMainMenu(userId, message);
         }
-
-        if (context.State == ConversationState.SaveFlow ||
+        else if (context.State == ConversationState.SaveFlow ||
             context.State == ConversationState.SaveDuplicateConfirmation)
         {
-            return await _mediator.Send(new SaveFlowCommand(userId, message), cancellationToken);
+            response = await _mediator.Send(new SaveFlowCommand(userId, message), cancellationToken);
         }
-
-        if (context.State == ConversationState.QueryFlow)
+        else if (context.State == ConversationState.QueryFlow)
         {
-            return await _mediator.Send(new QueryFlowCommand(userId, message), cancellationToken);
+            response = await _mediator.Send(new QueryFlowCommand(userId, message), cancellationToken);
         }
-
-        if (context.State == ConversationState.EditItemSelection ||
+        else if (context.State == ConversationState.EditItemSelection ||
             context.State == ConversationState.EditDataInput ||
             context.State == ConversationState.EditDuplicateConfirmation)
         {
-            return await _mediator.Send(new EditFlowCommand(userId, message), cancellationToken);
+            response = await _mediator.Send(new EditFlowCommand(userId, message), cancellationToken);
         }
-
-        if (context.State == ConversationState.DeleteFlow ||
+        else if (context.State == ConversationState.DeleteFlow ||
             context.State == ConversationState.DeleteConfirmation)
         {
-            return await _mediator.Send(new DeleteFlowCommand(userId, message), cancellationToken);
+            response = await _mediator.Send(new DeleteFlowCommand(userId, message), cancellationToken);
+        }
+        else
+        {
+            response = new BotResponse
+            {
+                Message = "目前無法處理這個操作。"
+            };
         }
 
-        return new BotResponse
-        {
-            Message = "目前無法處理這個操作。"
-        };
+        await _stateManager.SaveCurrentAsync();
+        return response;
     }
 
     private BotResponse HandleMainMenu(

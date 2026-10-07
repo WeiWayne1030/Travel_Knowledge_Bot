@@ -42,8 +42,15 @@ builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Progr
 builder.Services.AddScoped<BotCommandParser>();
 builder.Services.AddScoped<SaveInputParser>();
 
-//利用AddSingleton取代AddScoped,讓所有 HTTP Request 共用同一個 Dictionary => 暫解, 之後用Redis做控制
-builder.Services.AddSingleton<ConversationStateManager>();
+// 使用 Redis 做 Distributed Cache
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = builder.Configuration.GetConnectionString("RedisConnection");
+    options.InstanceName = "OkinawaBot_";
+});
+
+// 使用 Scoped，因為每次 Request 處理完可以將狀態存回 Redis
+builder.Services.AddScoped<ConversationStateManager>();
 
 //新增controller
 builder.Services.AddControllers();
