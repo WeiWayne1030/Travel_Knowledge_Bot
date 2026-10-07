@@ -13,15 +13,18 @@ public class LineWebhookController : ControllerBase
     private readonly IMediator _mediator;
     private readonly LineSignatureValidator _signatureValidator;
     private readonly LineClient _lineClient;
+    private readonly ILogger<LineWebhookController> _logger;
 
     public LineWebhookController(
         IMediator mediator,
         LineSignatureValidator signatureValidator,
-        LineClient lineClient)
+        LineClient lineClient,
+        ILogger<LineWebhookController> logger)
     {
         _mediator = mediator;
         _signatureValidator = signatureValidator;
         _lineClient = lineClient;
+        _logger = logger;
     }
 
     [HttpPost]
@@ -34,6 +37,7 @@ public class LineWebhookController : ControllerBase
 
         if (!_signatureValidator.ValidateSignature(body, signature))
         {
+            _logger.LogWarning("Invalid LINE webhook signature detected.");
             return BadRequest("Invalid signature");
         }
 
@@ -47,6 +51,7 @@ public class LineWebhookController : ControllerBase
         {
             if (lineEvent.Type != "message" || lineEvent.Message.Type != "text")
             {
+                _logger.LogInformation("Received non-text message or non-message event. Type: {Type}", lineEvent.Type);
                 continue;
             }
 

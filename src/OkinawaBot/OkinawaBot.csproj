@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
 	<PropertyGroup>
 		<TargetFramework>net9.0</TargetFramework>
@@ -23,7 +23,6 @@
 		<Folder Include="Domain\Rules\" />
 		<Folder Include="Infastructure\Data\" />
 		<Folder Include="Infastructure\Line\" />
-		<Folder Include="Models\" />
 	</ItemGroup>
 
 </Project>
