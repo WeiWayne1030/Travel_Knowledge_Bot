@@ -23,7 +23,7 @@ public class QueryFlowHandlerTests
         var userId = "user-1";
 
         var stateManager =
-            new ConversationStateManager();
+            new ConversationStateManager(new FakeDistributedCache());
 
         var commandParser =
             new BotCommandParser();
@@ -69,7 +69,7 @@ public class QueryFlowHandlerTests
         var userId = "user-1";
 
         var stateManager =
-            new ConversationStateManager();
+            new ConversationStateManager(new FakeDistributedCache());
 
         var commandParser =
             new BotCommandParser();
@@ -115,7 +115,7 @@ public class QueryFlowHandlerTests
         var userId = "user-1";
 
         var stateManager =
-            new ConversationStateManager();
+            new ConversationStateManager(new FakeDistributedCache());
 
         var commandParser =
             new BotCommandParser();

@@ -19,7 +19,7 @@ public class SaveFlowHandlerTests
         var userId = "user-1";
 
         var stateManager =
-            new ConversationStateManager();
+            new ConversationStateManager(new FakeDistributedCache());
 
         var commandParser =
             new BotCommandParser();
@@ -70,7 +70,7 @@ public class SaveFlowHandlerTests
         var userId = "user-1";
 
         var stateManager =
-            new ConversationStateManager();
+            new ConversationStateManager(new FakeDistributedCache());
 
         var commandParser =
             new BotCommandParser();
@@ -128,7 +128,7 @@ public class SaveFlowHandlerTests
         var userId = "user-1";
 
         var stateManager =
-            new ConversationStateManager();
+            new ConversationStateManager(new FakeDistributedCache());
 
         var commandParser =
             new BotCommandParser();
@@ -183,7 +183,7 @@ public class SaveFlowHandlerTests
         // Arrange
         var userId = "user-1";
 
-        var stateManager = new ConversationStateManager();
+        var stateManager = new ConversationStateManager(new FakeDistributedCache());
         var commandParser = new BotCommandParser();
         var inputParser = new SaveInputParser();
         var repository = new FakeTravelItemRepository();
@@ -244,7 +244,7 @@ public class SaveFlowHandlerTests
         // Arrange
         var userId = "user-1";
 
-        var stateManager = new ConversationStateManager();
+        var stateManager = new ConversationStateManager(new FakeDistributedCache());
         var commandParser = new BotCommandParser();
         var inputParser = new SaveInputParser();
         var repository = new FakeTravelItemRepository();
@@ -307,7 +307,7 @@ public class SaveFlowHandlerTests
         // Arrange
         var userId = "user-1";
 
-        var stateManager = new ConversationStateManager();
+        var stateManager = new ConversationStateManager(new FakeDistributedCache());
         var commandParser = new BotCommandParser();
         var inputParser = new SaveInputParser();
         var repository = new FakeTravelItemRepository();

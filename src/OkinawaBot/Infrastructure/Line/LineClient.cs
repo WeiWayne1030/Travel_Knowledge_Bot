@@ -6,7 +6,7 @@ using Microsoft.Extensions.Options;
 
 namespace OkinawaBot.Infrastructure.Line;
 
-public class LineClient
+public class LineClient : ILineClient
 {
     private readonly HttpClient _httpClient;
     private readonly LineBotOptions _options;

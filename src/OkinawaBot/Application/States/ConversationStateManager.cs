@@ -25,6 +25,10 @@ public class ConversationStateManager
         {
             _currentContext = JsonSerializer.Deserialize<ConversationContext>(cachedData);
         }
+        else
+        {
+            _currentContext = null;
+        }
 
         if (_currentContext == null)
         {

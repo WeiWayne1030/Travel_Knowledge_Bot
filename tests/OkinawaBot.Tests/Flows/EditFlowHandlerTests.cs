@@ -21,7 +21,7 @@ public class EditFlowHandlerTests
 
     public EditFlowHandlerTests()
     {
-        _stateManager = new ConversationStateManager();
+        _stateManager = new ConversationStateManager(new FakeDistributedCache());
         _commandParser = new BotCommandParser();
         _repository = new FakeTravelItemRepository();
         _editService = new EditService(_repository);

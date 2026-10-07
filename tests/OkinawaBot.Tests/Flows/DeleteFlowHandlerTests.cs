@@ -16,7 +16,7 @@ public class DeleteFlowHandlerTests
     {
         // Arrange
         var stateManager =
-            new ConversationStateManager();
+            new ConversationStateManager(new FakeDistributedCache());
 
         var commandParser =
             new BotCommandParser();
@@ -60,7 +60,7 @@ public class DeleteFlowHandlerTests
     {
         // Arrange
         var stateManager =
-            new ConversationStateManager();
+            new ConversationStateManager(new FakeDistributedCache());
 
         var commandParser =
             new BotCommandParser();
@@ -124,7 +124,7 @@ public class DeleteFlowHandlerTests
     {
         // Arrange
         var stateManager =
-            new ConversationStateManager();
+            new ConversationStateManager(new FakeDistributedCache());
 
         var commandParser =
             new BotCommandParser();
@@ -176,7 +176,7 @@ public class DeleteFlowHandlerTests
     {
         // Arrange
         var stateManager =
-            new ConversationStateManager();
+            new ConversationStateManager(new FakeDistributedCache());
 
         var commandParser =
             new BotCommandParser();
@@ -228,7 +228,7 @@ public class DeleteFlowHandlerTests
     {
         // Arrange
         var stateManager =
-            new ConversationStateManager();
+            new ConversationStateManager(new FakeDistributedCache());
 
         var commandParser =
             new BotCommandParser();
@@ -276,7 +276,7 @@ public class DeleteFlowHandlerTests
     {
         // Arrange
         var stateManager =
-            new ConversationStateManager();
+            new ConversationStateManager(new FakeDistributedCache());
 
         var commandParser =
             new BotCommandParser();
@@ -337,7 +337,7 @@ public class DeleteFlowHandlerTests
     {
         // Arrange
         var stateManager =
-            new ConversationStateManager();
+            new ConversationStateManager(new FakeDistributedCache());
 
         var commandParser =
             new BotCommandParser();

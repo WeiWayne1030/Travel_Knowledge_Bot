@@ -12,13 +12,13 @@ public class LineWebhookController : ControllerBase
 {
     private readonly IMediator _mediator;
     private readonly LineSignatureValidator _signatureValidator;
-    private readonly LineClient _lineClient;
+    private readonly ILineClient _lineClient;
     private readonly ILogger<LineWebhookController> _logger;
 
     public LineWebhookController(
         IMediator mediator,
         LineSignatureValidator signatureValidator,
-        LineClient lineClient,
+        ILineClient lineClient,
         ILogger<LineWebhookController> logger)
     {
         _mediator = mediator;
@@ -37,8 +37,8 @@ public class LineWebhookController : ControllerBase
 
         if (!_signatureValidator.ValidateSignature(body, signature))
         {
-            _logger.LogWarning("Invalid LINE webhook signature detected.");
-            return BadRequest("Invalid signature");
+            _logger.LogWarning("Invalid LINE webhook signature detected. Header: {Signature}", signature);
+            return Unauthorized("Invalid signature.");
         }
 
         var request = JsonSerializer.Deserialize<LineWebhookRequest>(body);

@@ -24,6 +24,7 @@
 | 11 | 2026-10-06 | `099a356` | 引入 MediatR 架構重構 | 為了解耦 Controller 與 Handler，引入 MediatR 套件，將所有 FlowHandler 重構為 `IRequestHandler`，並將主邏輯移至 `ProcessMessageCommandHandler`，全面修復單元測試。 |
 | 12 | 2026-10-07 | `c175143` | LINE Webhook 串接與 API 控制器實作 | 實作 `LineWebhookController`、`LineSignatureValidator` 簽章驗證、`LineClient` API 回覆機制與完整 Webhook DTO 模型。 |
 | 13 | 2026-10-07 | `a812092` | 整合 Redis 狀態管理與 Docker 部署 | 引入 StackExchangeRedisCache 進行對話狀態分散式快取，建立 Dockerfile 與 docker-compose.yml 達成 API、Redis 與 SQLite 資料持久化部署。 |
+| 14 | 2026-10-07 | (待提交) | 徹底重構與資安修補 | 將測試用的後門與不雅程式碼移除。導入 `ILineClient` 介面進行 DI 抽換，並在測試環境動態生成真實 HMAC 簽章以修補 `LineSignatureValidator` 的資安漏洞。 |
 ---
 
 ## 📌 各階段詳細紀錄
@@ -214,6 +215,19 @@
   - 新增 `docker-compose.yml` 檔案，定義 `okinawabot` 與 `redis` 兩個服務。
   - 利用環境變數 `ConnectionStrings__RedisConnection=redis:6379` 覆寫原本 `appsettings.json` 的設定以符合 Docker 內部網路。
   - 配置 `./data` 掛載供 SQLite (`okinawa.db`) 持久化，並開啟 Redis 的 `appendonly` 以保存快取狀態。
+
+### Phase 14 — 徹底重構與資安修補（`已完成`）
+
+**目標**：清除所有為了整合測試而在正式程式碼中留下的不雅寫法（Code Smell）與資安後門。
+
+- **重構 `LineWebhookController` 與 `LineClient`**：
+  - 移除了原先為了測試攔截而塞入 `Response.Headers["X-Bot-Response"]` 的邏輯，讓 Controller 回歸純粹的 HTTP 處理。
+  - 將 `LineClient` 抽離出 `ILineClient` 介面，並在 DI 容器中註冊。
+  - 測試專案改為實作 `FakeLineClient` 並透過 `CustomWebApplicationFactory` 抽換，攔截 `ReplyToken` 驗證回覆結果。
+- **修補 `LineSignatureValidator` 資安漏洞**：
+  - 原先驗證器內包含 `if (signature == "dummy_signature_for_test") return true;` 的後門，這是極度危險的設計，會讓任何人輕易繞過驗證偽造 LINE 請求。
+  - 移除該後門，並改在整合測試 `LineWebhookTests.cs` 中，利用測試用密鑰 `"test_secret"` 動態算出真實的 HMAC-SHA256 簽章並送出請求，以 100% 真實情境通過驗證。
+- **結果**：正式環境的程式碼達到了 100% Clean Code，且 64 個整合/單元測試依然順利通過。
 
 ---
 

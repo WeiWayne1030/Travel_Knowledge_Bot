@@ -8,6 +8,7 @@ using OkinawaBot.Application.State;
 using OkinawaBot.Domain.Interfaces;
 using OkinawaBot.Infrastructure.Data;
 using OkinawaBot.Infrastructure.Repositories;
+using OkinawaBot.Infrastructure.Line;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,12 +29,12 @@ builder.Services.AddScoped<DeleteService>();
 
 // LINE Messaging API
 //綁定lineBotOptions=>config中的LineBot設定
-builder.Services.Configure<OkinawaBot.Infrastructure.Line.LineBotOptions>(
-    builder.Configuration.GetSection(OkinawaBot.Infrastructure.Line.LineBotOptions.SectionName));
+builder.Services.Configure<LineBotOptions>(
+    builder.Configuration.GetSection(LineBotOptions.SectionName));
 //綁定LineSignatureValidator(防偽簽名)
-builder.Services.AddSingleton<OkinawaBot.Infrastructure.Line.LineSignatureValidator>();
+builder.Services.AddSingleton<LineSignatureValidator>();
 //使用HttpClientFactory管理HttpClient->LineClient(LineMessagingAPI)
-builder.Services.AddHttpClient<OkinawaBot.Infrastructure.Line.LineClient>();
+builder.Services.AddHttpClient<ILineClient, LineClient>();
 
 //MediatR
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));

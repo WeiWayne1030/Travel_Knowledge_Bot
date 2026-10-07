@@ -22,7 +22,7 @@ public class MessageHandlerTests
 
     public MessageHandlerTests()
     {
-        _stateManager = new ConversationStateManager();
+        _stateManager = new ConversationStateManager(new FakeDistributedCache());
         _repository = new FakeTravelItemRepository();
 
         var services = new ServiceCollection();

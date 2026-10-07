@@ -1,3 +1,4 @@
+using OkinawaBot.Tests.Fakes;
 using OkinawaBot.Application.State;
 
 namespace OkinawaBot.Tests.State;
@@ -8,7 +9,7 @@ public class ConversationStateManagerTests
     public void GetOrCreate_ShouldReturnMainMenu_ForNewUser()
     {
         // Arrange
-        var manager = new ConversationStateManager();
+        var manager = new ConversationStateManager(new FakeDistributedCache());
 
         // Act
         var context = manager.GetOrCreate("user-001");
@@ -23,7 +24,7 @@ public class ConversationStateManagerTests
     public void SetState_ShouldChangeUserState()
     {
         // Arrange
-        var manager = new ConversationStateManager();
+        var manager = new ConversationStateManager(new FakeDistributedCache());
 
         // Act
         manager.SetState(
@@ -42,14 +43,16 @@ public class ConversationStateManagerTests
     public void Reset_ShouldReturnUserToMainMenu()
     {
         // Arrange
-        var manager = new ConversationStateManager();
+        var manager = new ConversationStateManager(new FakeDistributedCache());
 
         manager.SetState(
             "user-001",
             ConversationState.SaveFlow);
+        manager.SaveCurrentAsync().Wait();
 
         // Act
         manager.Reset("user-001");
+        manager.SaveCurrentAsync().Wait();
 
         var context = manager.GetOrCreate("user-001");
 
@@ -66,16 +69,18 @@ public class ConversationStateManagerTests
     public void Users_ShouldHaveIndependentStates()
     {
         // Arrange
-        var manager = new ConversationStateManager();
+        var manager = new ConversationStateManager(new FakeDistributedCache());
 
         // Act
         manager.SetState(
             "user-A",
             ConversationState.SaveFlow);
+        manager.SaveCurrentAsync().Wait();
 
         manager.SetState(
             "user-B",
             ConversationState.QueryFlow);
+        manager.SaveCurrentAsync().Wait();
 
         var userA = manager.GetOrCreate("user-A");
         var userB = manager.GetOrCreate("user-B");
@@ -90,3 +95,4 @@ public class ConversationStateManagerTests
             userB.State);
     }
 }
+
