@@ -2,7 +2,7 @@
 
 本文件記錄 **Okinawa Travel Knowledge Bot** 從需求分析到實作的開發歷程，方便日後回顧設計決策、追蹤進度與規劃下一步。
 
-> 最後更新：2026-10-05
+> 最後更新：2026-10-07
 > 分支：`main`（遠端 `origin/main`）
 
 ---
@@ -19,10 +19,11 @@
 | 6 | 2026-10-05 10:46 | `bc07934` | SRS 與實作對齊 | Save 輸入格式定為 `URL #Category Name`；FR-016 改成先確認再儲存；新增 DEVLOG |
 | 7 | 2026-10-05 10:56 | `66b3467` | 技術債修正 (訊息與語言) | `MessageHandler` 改為回傳 `Task<BotResponse>`；驗證訊息統一為繁體中文 |
 | 8 | 2026-10-05 11:05 | `6f3d4de` | 技術債與命名清理 | 修正 `Infrastructure` 拼字、`ConversationState.cs` 檔名、`ConcurrentDictionary` 狀態管理、刪除 `test.cs` 及取消追蹤 `bin/obj` 產物 |
-| 9 | 2026-10-06 | 待定 | 補齊所有流程與環境修復 | 完成 Query、Edit、Delete Flow，修復 MessageHandler 測試，並修正 Swagger 在 .NET 9 下的衝突與啟動設定 |
-| 10 | 2026-10-06 | 待定 | 補齊所有流程的整合測試 | 在 `LineWebhookTests.cs` 中補上 Query、Edit、Delete Flow 的 Webhook 整合測試，處理測試間 DB 資料互相污染問題。目前 64 測試全數通過 |
-| 11 | 2026-10-06 | 待定 | 引入 MediatR 架構重構 | 為了解耦 Controller 與 Handler，引入 MediatR 套件，將所有 FlowHandler 重構為 `IRequestHandler`，並將主邏輯移至 `ProcessMessageCommandHandler`，全面修復單元測試。 |
-
+| 9 | 2026-10-06 | `e375d38` | 補齊所有流程與環境修復 | 完成 Query、Edit、Delete Flow，修復 MessageHandler 測試，並修正 Swagger 在 .NET 9 下的衝突與啟動設定 |
+| 10 | 2026-10-06 | `64825ee` | 補齊所有流程的整合測試 | 在 `LineWebhookTests.cs` 中補上 Query、Edit、Delete Flow 的 Webhook 整合測試，處理測試間 DB 資料互相污染問題。目前 64 測試全數通過 |
+| 11 | 2026-10-06 | `099a356` | 引入 MediatR 架構重構 | 為了解耦 Controller 與 Handler，引入 MediatR 套件，將所有 FlowHandler 重構為 `IRequestHandler`，並將主邏輯移至 `ProcessMessageCommandHandler`，全面修復單元測試。 |
+| 12 | 2026-10-07 | `c175143` | LINE Webhook 串接與 API 控制器實作 | 實作 `LineWebhookController`、`LineSignatureValidator` 簽章驗證、`LineClient` API 回覆機制與完整 Webhook DTO 模型。 |
+| 13 | 2026-10-07 | `a812092` | 整合 Redis 狀態管理與 Docker 部署 | 引入 StackExchangeRedisCache 進行對話狀態分散式快取，建立 Dockerfile 與 docker-compose.yml 達成 API、Redis 與 SQLite 資料持久化部署。 |
 ---
 
 ## 📌 各階段詳細紀錄
@@ -121,7 +122,7 @@
 - 主選單指令回應調整：進入 Save 時回覆格式說明（符合 AC-003-01/FR-001）；Query/Edit/Delete 回覆「尚未開放」並支援 `Return`。
 - `SaveInputParser` 與 `SaveService` 的驗證與錯誤訊息統一改為繁體中文。
 
-### Phase 8 — 技術債與命名清理
+### Phase 8 — 技術債與命名清理（`6f3d4de`）
 
 **目標**：修復資料夾拼字錯誤、增強執行階段安全性與清理無用檔案。
 
@@ -137,7 +138,7 @@
   - 修正 `Program.cs` 註解字元編碼。
   - 透過 `git rm --cached` 移除誤追蹤的 `bin/` 與 `obj/` 建置檔。
 
-### Phase 9 — 補齊 Query、Edit、Delete 流程與修復 Swagger
+### Phase 9 — 補齊 Query、Edit、Delete 流程與修復 Swagger（`e375d38`）
 
 **目標**：把 MVP 中剩下的三個主要對話流程做完，並確保單元測試與開發環境正常。
 
@@ -151,7 +152,7 @@
   - 在 .NET 9 中，原本加入的 `Microsoft.AspNetCore.OpenApi` 與 `Swashbuckle.AspNetCore` 有型別版本衝突，移除前者讓 Swashbuckle 正常運作。
   - 調整 `launchSettings.json`，於 `http`、`https` 與 `IIS Express` 配置補上 `"launchBrowser": true` 與 `"launchUrl": "swagger"`，使 `dotnet run` 能夠順利彈出測試介面。
 
-### Phase 10 — 補齊所有流程的整合測試
+### Phase 10 — 補齊所有流程的整合測試（`64825ee`）
 
 **目標**：確保在實際 Web API (`/api/LineWebhook`) 收到各項 Flow 對應指令時，整個系統能正確回應，並且操作真正的 (In-Memory) 資料庫。
 
@@ -165,7 +166,7 @@
   - **名稱防呆衝突**：Edit Flow 修改資料時，為了避免跟之前的測試殘留資料名稱重複而進到二次確認畫面，將測試用資料改以 `Guid` 產生隨機名稱，確保永遠可以走通 Happy Path。
 - **成果**：專案涵蓋 64 項單元與整合測試，全部執行通過 (`Passed`)，為 LINE Webhook 的 Controller 接接鋪好了安全網。
 
-### Phase 11 — 引入 MediatR 架構重構
+### Phase 11 — 引入 MediatR 架構重構（`099a356`）
 
 **目標**：為了解決未來擴充性問題以及 Controller 依賴過多 Handler 的情況，引入 MediatR 實踐 CQRS (Command Query Responsibility Segregation) 或 Mediator 設計模式。
 
@@ -183,6 +184,36 @@
   - 撰寫 PowerShell 自動化腳本，將 `tests/OkinawaBot.Tests/Flows/` 下高達數百行的測試檔內舊有 `.HandleAsync(userId, msg)` 呼叫，全面批量替換為 `.Handle(new OOOCommand(...), CancellationToken.None)`。
   - 修正 MediatR 在測試中缺少 `ILoggerFactory` 的啟動錯誤。
   - 最終 64 個測試全數 `Passed`，確保重構後系統行為與原先 100% 一致。
+
+### Phase 12 — LINE Webhook 串接與 API 控制器實作（`c175143`）
+
+**目標**：讓系統能真正接收來自 LINE Messaging API Webhook 的 HTTP 請求，驗證簽章真實性，並將訊息丟入 MediatR 處理後回傳給 LINE 使用者。
+
+- **新增 LINE Infrastructure 元件**：
+  - `LineBotOptions`：於 `appsettings.json` 設定 `ChannelSecret` 與 `ChannelAccessToken` 的綁定。
+  - `LineSignatureValidator`：實作 HMAC-SHA256 簽章驗證，比對 Request Header 中的 `X-Line-Signature`，避免偽造請求。
+  - `LineWebhookRequest`：建立包含 Event、Message 等完整的 LINE Webhook JSON 請求資料結構。
+  - `LineClient`：建立獨立 HttpClient 服務，負責向 LINE API 發送 Reply Message。
+- **實作 LineWebhookController**：
+  - 開放 HTTP POST API endpoint `/api/LineWebhook`。
+  - 於 Controller 內檢驗 `X-Line-Signature`，無效簽章即回傳 HTTP 401。
+  - 解析事件，將文字訊息的 `UserId` 與 `Text` 封裝為 `ProcessMessageCommand` 透過 `IMediator` 分派處理。
+  - 收到處理結果後，呼叫 `LineClient` 將回覆內容送回給 LINE 使用者，並透過 `ILogger` 記錄運行狀態。
+
+### Phase 13 — 整合 Redis 狀態管理與 Docker 部署（`a812092`）
+
+**目標**：為了解決未來容器化部署以及服務重啟導致對話狀態（`ConversationContext`）遺失的問題，將記憶體狀態管理（`ConcurrentDictionary`）遷移至分散式快取（Redis）。
+
+- **修改架構**：
+  - 安裝套件 `Microsoft.Extensions.Caching.StackExchangeRedis`。
+  - 將 `ConversationStateManager` 的 DI 生命週期從 `Singleton` 變更為 `Scoped`。
+  - 重構 `ConversationStateManager` 內部，使用 `IDistributedCache` 進行存取與 `System.Text.Json` 序列化。
+  - 於 `ProcessMessageCommandHandler` 最末端新增 `await _stateManager.SaveCurrentAsync()`，無縫將狀態寫回 Redis。
+- **建置 Docker 運行環境**：
+  - 新增 `Dockerfile` 以供未來部署至 Zeabur 等容器服務平台。
+  - 新增 `docker-compose.yml` 檔案，定義 `okinawabot` 與 `redis` 兩個服務。
+  - 利用環境變數 `ConnectionStrings__RedisConnection=redis:6379` 覆寫原本 `appsettings.json` 的設定以符合 Docker 內部網路。
+  - 配置 `./data` 掛載供 SQLite (`okinawa.db`) 持久化，並開啟 Redis 的 `appendonly` 以保存快取狀態。
 
 ---
 
@@ -206,7 +237,7 @@
 | FR-014 | 編輯 | ✅ 已完成（包含確認流程） |
 | FR-015 | 刪除 | ✅ 已完成（包含確認流程） |
 | FR-016 | 名稱重複確認 | ✅ 已完成（Continue / Return 確認流程） |
-| — | LINE Webhook 串接 | ⬜ 未實作（`Controllers/`、`Models/`、`Infrastructure/Line/` 目前是空的） |
+| — | LINE Webhook 串接 | ✅ 已完成（`LineWebhookController` 支援 HMAC-SHA256 簽章驗證、MediatR 轉發與 LINE 回覆 API） |
 
 ---
 
@@ -219,10 +250,10 @@
 
 ## 🔜 下一步規劃
 
-1. 串接 LINE Messaging API：實作 `LineWebhookController`、簽章驗證、以及使用 `LineClient` 進行訊息回覆。
-2. 加入 URL 格式驗證功能（改善 FR-010）與完整的錯誤訊息範例（改善 FR-012）。
-3. 建立 GitHub Actions CI（包含 `dotnet build` + `dotnet test`）。
-4. 考慮加入「系統支援的分類」白名單或輔助（解決 FR-008 延伸問題）。
+1. **本機外網測試與 LINE 帳號連通**：將已完成的 Webhook API 透過 **ngrok** 暴露至外網，並於 LINE Developers Console 設定 Webhook URL，實際以 LINE 軟體測試所有互動流程。
+2. **優化使用者體驗 (UX)**：考慮利用 LINE Flex Message 美化查詢結果，或加入「系統支援的分類」白名單（解決 FR-008 延伸問題），降低使用者輸入錯誤的機率。
+3. **完善例外處理**：加入 URL 格式驗證功能（改善 FR-010）與完整的錯誤訊息範例提示（改善 FR-012）。
+4. **自動化 CI/CD 部署**：建立 GitHub Actions CI（包含自動化單元測試與建置），並整合部署至 **Zeabur** 等雲端平台。
 
 ---
 

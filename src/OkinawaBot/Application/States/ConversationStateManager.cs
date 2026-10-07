@@ -42,6 +42,7 @@ public class ConversationStateManager
     {
         if (_currentContext != null)
         {
+            //設定Session有效時間為一小時
             var options = new DistributedCacheEntryOptions()
                 .SetSlidingExpiration(TimeSpan.FromHours(1));
                 
@@ -50,6 +51,7 @@ public class ConversationStateManager
         }
     }
 
+    //更新狀態就回寫redis
     public void SetState(string userId, ConversationState state)
     {
         var context = GetOrCreate(userId);

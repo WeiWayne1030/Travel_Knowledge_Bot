@@ -58,11 +58,12 @@ AC = 怎樣才算完成
            ▼
 ┌─────────────────────┐
 │   Message Handler   │
+│    (MediatR)        │
 └──────────┬──────────┘
            ▼
 ┌─────────────────────┐
-│ Command / State     │
-│ Manager             │
+│  State Manager      │
+│      (Redis)        │
 └──────────┬──────────┘
            ▼
 ┌─────────────────────┐
@@ -91,8 +92,18 @@ OkinawaBot/
 │       │
 │       ├── Application/
 │       │   │
+│       │   ├── Commands/
+│       │   │   ├── ProcessMessageCommand.cs
+│       │   │   └── SaveFlowCommand.cs
+│       │   │
 │       │   ├── Handlers/
-│       │   │   └── MessageHandler.cs
+│       │   │   └── ProcessMessageCommandHandler.cs
+│       │   │
+│       │   ├── Flows/
+│       │   │   ├── SaveFlowHandler.cs
+│       │   │   ├── QueryFlowHandler.cs
+│       │   │   ├── EditFlowHandler.cs
+│       │   │   └── DeleteFlowHandler.cs
 │       │   │
 │       │   ├── Services/
 │       │   │   ├── SaveService.cs
@@ -134,10 +145,11 @@ OkinawaBot/
 │
 ├── docs/
 │   ├── SRS.md
-│   ├── architecture.md
-│   ├── state-diagram.md
-│   └── database.md
+│   ├── design.md
+│   └── DEVLOG.md
 │
+├── docker-compose.yml
+├── Dockerfile
 ├── OkinawaBot.sln
 └── README.md
 

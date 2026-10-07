@@ -602,6 +602,21 @@ Then the system SHALL save the item without displaying a duplicate-name warning.
 
 ## 7. Non-Functional Requirements
 
+NFR-001 — State Persistence
+The system SHALL maintain user conversation states across restarts by utilizing a distributed cache (Redis).
+
+NFR-002 — Data Persistence
+The system SHALL ensure that SQLite database files and Redis states survive container restarts by using persistent volumes.
+
 ## 8. Constraints
+
+CON-001 — Framework
+The application SHALL be built on .NET 9.
+
+CON-002 — Deployment
+The application SHALL be containerized and orchestrated using Docker Compose.
+
+CON-003 — Database
+The primary relational data store SHALL be SQLite.
 
 ## 9. Future Enhancements
