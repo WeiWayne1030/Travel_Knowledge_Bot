@@ -1,7 +1,8 @@
-﻿namespace OkinawaBot.Application.State;
+namespace OkinawaBot.Application.State;
 
 public enum ConversationState
 {
+    Idle,
     MainMenu,
     
     SaveFlow,

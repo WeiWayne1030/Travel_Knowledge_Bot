@@ -1,4 +1,4 @@
-﻿namespace OkinawaBot.Application.Commands;
+namespace OkinawaBot.Application.Commands;
 
 public enum BotCommand
 {
@@ -7,5 +7,6 @@ public enum BotCommand
     Edit,
     Delete,
     Return,
+    Sleep,
     Unknown
 }

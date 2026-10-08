@@ -16,7 +16,7 @@ public class ConversationStateManagerTests
 
         // Assert
         Assert.Equal(
-            ConversationState.MainMenu,
+            ConversationState.Idle,
             context.State);
     }
 
@@ -58,7 +58,7 @@ public class ConversationStateManagerTests
 
         // Assert
         Assert.Equal(
-            ConversationState.MainMenu,
+            ConversationState.Idle,
             context.State);
 
         Assert.Null(context.CurrentItemId);

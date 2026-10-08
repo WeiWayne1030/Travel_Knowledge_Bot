@@ -50,7 +50,8 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
             var serviceProvider = services.BuildServiceProvider();
             using var scope = serviceProvider.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            db.Database.EnsureCreated();
+            db.Database.EnsureDeleted();
+            db.Database.Migrate();
         });
     }
 }

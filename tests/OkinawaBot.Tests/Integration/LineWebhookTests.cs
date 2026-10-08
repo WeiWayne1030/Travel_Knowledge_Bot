@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using System.Net.Http.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -25,6 +25,13 @@ public class LineWebhookTests
         var client = _factory.CreateClient();
 
         var userId = "integration-test-user";
+
+        // Wake up bot
+        var wakeRequest = new LineWebhookRequest
+        {
+            Events = [ new LineEvent { Type = "message", ReplyToken = "token_wake", Source = new LineSource { UserId = userId }, Message = new LineMessage { Type = "text", Text = "旅遊小幫手" } } ]
+        };
+        await PostWebhookAsync(client, wakeRequest);
 
         // Act 1：使用者輸入 Save
         var saveCommandRequest = new LineWebhookRequest
@@ -138,6 +145,13 @@ public class LineWebhookTests
             await db.SaveChangesAsync();
         }
 
+        // Wake up bot
+        var wakeRequest = new LineWebhookRequest
+        {
+            Events = [ new LineEvent { Type = "message", ReplyToken = "token_wake2", Source = new LineSource { UserId = userId }, Message = new LineMessage { Type = "text", Text = "旅遊小幫手" } } ]
+        };
+        await PostWebhookAsync(client, wakeRequest);
+
         // Act 1: 使用者輸入 Query 進入查詢模式
         var queryCommandRequest = new LineWebhookRequest
         {
@@ -203,6 +217,13 @@ public class LineWebhookTests
             await db.SaveChangesAsync();
             itemId = item.Id;
         }
+
+        // Wake up bot
+        var wakeRequest = new LineWebhookRequest
+        {
+            Events = [ new LineEvent { Type = "message", ReplyToken = "token_wake3", Source = new LineSource { UserId = userId }, Message = new LineMessage { Type = "text", Text = "旅遊小幫手" } } ]
+        };
+        await PostWebhookAsync(client, wakeRequest);
 
         // Act 1: 使用者輸入 Edit 進入編輯模式
         var editCommandRequest = new LineWebhookRequest
@@ -303,6 +324,13 @@ public class LineWebhookTests
             await db.SaveChangesAsync();
             itemId = item.Id;
         }
+
+        // Wake up bot
+        var wakeRequest = new LineWebhookRequest
+        {
+            Events = [ new LineEvent { Type = "message", ReplyToken = "token_wake4", Source = new LineSource { UserId = userId }, Message = new LineMessage { Type = "text", Text = "旅遊小幫手" } } ]
+        };
+        await PostWebhookAsync(client, wakeRequest);
 
         // Act 1: 使用者輸入 Delete 進入刪除模式
         var deleteCommandRequest = new LineWebhookRequest

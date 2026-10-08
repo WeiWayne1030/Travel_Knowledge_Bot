@@ -35,7 +35,7 @@ public class ConversationStateManager
             _currentContext = new ConversationContext
             {
                 UserId = userId,
-                State = ConversationState.MainMenu
+                State = ConversationState.Idle
             };
         }
 
@@ -65,7 +65,7 @@ public class ConversationStateManager
     public void Reset(string userId)
     {
         var context = GetOrCreate(userId);
-        context.State = ConversationState.MainMenu;
+        context.State = ConversationState.Idle;
         context.CurrentItemId = null;
         context.PendingSave = null;
         context.PendingEdit = null;

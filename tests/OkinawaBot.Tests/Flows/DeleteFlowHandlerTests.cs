@@ -46,7 +46,7 @@ public class DeleteFlowHandlerTests
             stateManager.GetOrCreate("test-user");
 
         Assert.Equal(
-            ConversationState.MainMenu,
+            ConversationState.Idle,
             context.State);
 
         Assert.Contains(
@@ -259,7 +259,7 @@ public class DeleteFlowHandlerTests
 
         // Assert
         Assert.Equal(
-            ConversationState.MainMenu,
+            ConversationState.Idle,
             context.State);
 
         Assert.Null(
@@ -315,7 +315,7 @@ public class DeleteFlowHandlerTests
 
         // Assert
         Assert.Equal(
-            ConversationState.MainMenu,
+            ConversationState.Idle,
             context.State);
 
         Assert.Null(

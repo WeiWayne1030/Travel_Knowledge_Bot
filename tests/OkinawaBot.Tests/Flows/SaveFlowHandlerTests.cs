@@ -53,7 +53,7 @@ public class SaveFlowHandlerTests
             stateManager.GetOrCreate(userId);
 
         Assert.Equal(
-            ConversationState.MainMenu,
+            ConversationState.Idle,
             context.State);
 
         Assert.Equal(
@@ -112,7 +112,7 @@ public class SaveFlowHandlerTests
             stateManager.GetOrCreate(userId);
 
         Assert.Equal(
-            ConversationState.MainMenu,
+            ConversationState.Idle,
             context.State);
 
         Assert.Equal(
@@ -288,7 +288,7 @@ public class SaveFlowHandlerTests
             stateManager.GetOrCreate(userId);
 
         Assert.Equal(
-            ConversationState.MainMenu,
+            ConversationState.Idle,
             context.State);
 
         Assert.Equal(
@@ -351,7 +351,7 @@ public class SaveFlowHandlerTests
             stateManager.GetOrCreate(userId);
 
         Assert.Equal(
-            ConversationState.MainMenu,
+            ConversationState.Idle,
             context.State);
 
         Assert.Null(

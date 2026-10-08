@@ -49,7 +49,7 @@ public class EditFlowHandlerTests
             _stateManager.GetOrCreate(userId);
 
         Assert.Equal(
-            ConversationState.MainMenu,
+            ConversationState.Idle,
             context.State);
 
         Assert.Equal(
@@ -72,7 +72,7 @@ public class EditFlowHandlerTests
             _stateManager.GetOrCreate(userId);
 
         Assert.Equal(
-            ConversationState.MainMenu,
+            ConversationState.Idle,
             context.State);
 
         Assert.Equal(
@@ -197,7 +197,7 @@ public class EditFlowHandlerTests
             _stateManager.GetOrCreate(userId);
 
         Assert.Equal(
-            ConversationState.MainMenu,
+            ConversationState.Idle,
             context.State);
 
         Assert.Equal(
@@ -272,7 +272,7 @@ public class EditFlowHandlerTests
             await _repository.FindByIdAsync(item.Id);
 
         Assert.Equal(
-            ConversationState.MainMenu,
+            ConversationState.Idle,
             context.State);
 
         Assert.Equal(
@@ -377,7 +377,7 @@ public class EditFlowHandlerTests
         var result = await _handler.Handle(new OkinawaBot.Application.Requests.EditFlowCommand(userId, "Return"), CancellationToken.None);
 
         Assert.Equal(
-            ConversationState.MainMenu,
+            ConversationState.Idle,
             context.State);
 
         Assert.Null(context.CurrentItemId);
@@ -434,7 +434,7 @@ public class EditFlowHandlerTests
             await _repository.FindByIdAsync(item.Id);
 
         Assert.Equal(
-            ConversationState.MainMenu,
+            ConversationState.Idle,
             context.State);
 
         Assert.Equal(

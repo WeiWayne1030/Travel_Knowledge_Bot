@@ -61,6 +61,7 @@ public class MessageHandlerTests
     public async Task HandleAsync_ShouldEnterSaveFlow_WhenUserSendsSave()
     {
         const string userId = "user-001";
+        await HandleAsync(userId, "旅遊小幫手");
         await HandleAsync(userId, "Save");
 
         var context = _stateManager.GetOrCreate(userId);
@@ -72,6 +73,7 @@ public class MessageHandlerTests
     public async Task HandleAsync_ShouldEnterQueryFlow_WhenUserSendsQuery()
     {
         const string userId = "user-001";
+        await HandleAsync(userId, "旅遊小幫手");
         await HandleAsync(userId, "Query");
 
         var context = _stateManager.GetOrCreate(userId);
@@ -84,6 +86,7 @@ public class MessageHandlerTests
     {
         const string userId = "user-001";
 
+        await HandleAsync(userId, "旅遊小幫手");
         await HandleAsync(userId, "Save");
         await HandleAsync(userId, "https://example.com #ATTRACTION 美麗海水族館");
 
@@ -99,6 +102,7 @@ public class MessageHandlerTests
     {
         const string userId = "user-001";
 
+        await HandleAsync(userId, "旅遊小幫手");
         await HandleAsync(userId, "Save");
         await HandleAsync(userId, "https://example.com 美麗海水族館");
 
@@ -111,9 +115,11 @@ public class MessageHandlerTests
     {
         const string userId = "user-001";
 
+        await HandleAsync(userId, "旅遊小幫手");
         await HandleAsync(userId, "Save");
         await HandleAsync(userId, "https://example.com #ATTRACTION 美麗海水族館");
 
+        await HandleAsync(userId, "旅遊小幫手");
         await HandleAsync(userId, "Save");
         await HandleAsync(userId, "https://example.com/2 #ATTRACTION 美麗海水族館");
 
@@ -126,11 +132,25 @@ public class MessageHandlerTests
     {
         const string userId = "user-001";
 
+        await HandleAsync(userId, "旅遊小幫手");
         await HandleAsync(userId, "Save");
         await HandleAsync(userId, "return");
 
         var context = _stateManager.GetOrCreate(userId);
-        Assert.Equal(ConversationState.MainMenu, context.State);
+        Assert.Equal(ConversationState.Idle, context.State);
+    }
+
+    // 驗證輸入 再見小幫手 時，能正確返回 Idle (退出小幫手)
+    [Fact]
+    public async Task HandleAsync_ShouldReturnToIdle_WhenUserEntersSleep()
+    {
+        const string userId = "user-sleep";
+
+        await HandleAsync(userId, "旅遊小幫手");
+        await HandleAsync(userId, "再見小幫手");
+
+        var context = _stateManager.GetOrCreate(userId);
+        Assert.Equal(ConversationState.Idle, context.State);
     }
 
     // MessageHandler 是否真的把訊息交給 EditFlowHandler。
@@ -139,6 +159,7 @@ public class MessageHandlerTests
     {
         const string userId = "user-1";
 
+        await HandleAsync(userId, "旅遊小幫手");
         await HandleAsync(userId, "Edit");
 
         var context = _stateManager.GetOrCreate(userId);
@@ -172,6 +193,7 @@ public class MessageHandlerTests
     [Fact]
     public async Task HandleAsync_WhenDeleteCommand_ShouldEnterDeleteFlow()
     {
+        await HandleAsync("test-user", "旅遊小幫手");
         await HandleAsync("test-user", "Delete");
 
         var context = _stateManager.GetOrCreate("test-user");
@@ -181,10 +203,11 @@ public class MessageHandlerTests
     [Fact]
     public async Task HandleAsync_WhenInDeleteFlowAndReturn_ShouldGoBackToMainMenu()
     {
+        await HandleAsync("test-user", "旅遊小幫手");
         await HandleAsync("test-user", "Delete");
         await HandleAsync("test-user", "Return");
 
         var context = _stateManager.GetOrCreate("test-user");
-        Assert.Equal(ConversationState.MainMenu, context.State);
+        Assert.Equal(ConversationState.Idle, context.State);
     }
 }

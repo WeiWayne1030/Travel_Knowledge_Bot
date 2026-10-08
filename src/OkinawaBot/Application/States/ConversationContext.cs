@@ -1,4 +1,4 @@
-﻿using OkinawaBot.Application.Models;
+using OkinawaBot.Application.Models;
 
 namespace OkinawaBot.Application.State;
 
@@ -8,7 +8,7 @@ public class ConversationContext
     public string UserId { get; set; } = string.Empty;
 
     public ConversationState State { get; set; }
-        = ConversationState.MainMenu;
+        = ConversationState.Idle;
 
     public int? CurrentItemId { get; set; }
 

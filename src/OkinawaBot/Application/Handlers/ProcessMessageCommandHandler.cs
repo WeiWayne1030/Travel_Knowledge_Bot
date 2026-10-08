@@ -31,7 +31,25 @@ public class ProcessMessageCommandHandler : IRequestHandler<ProcessMessageComman
 
         BotResponse response;
 
-        if (context.State == ConversationState.MainMenu)
+        if (context.State == ConversationState.Idle)
+        {
+            if (message.Trim() == "旅遊小幫手")
+            {
+                _stateManager.SetState(userId, ConversationState.MainMenu);
+                response = new BotResponse
+                {
+                    Message = "您好！我是旅遊小幫手。\n請輸入 Save、Query、Edit 或 Delete。"
+                };
+            }
+            else
+            {
+                response = new BotResponse
+                {
+                    Message = string.Empty
+                };
+            }
+        }
+        else if (context.State == ConversationState.MainMenu)
         {
             response = HandleMainMenu(userId, message);
         }
@@ -105,6 +123,13 @@ public class ProcessMessageCommandHandler : IRequestHandler<ProcessMessageComman
                 return new BotResponse
                 {
                     Message = "請輸入要刪除的項目編號。"
+                };
+
+            case BotCommand.Sleep:
+                _stateManager.Reset(userId);
+                return new BotResponse
+                {
+                    Message = "已退出小幫手。"
                 };
 
             default:
