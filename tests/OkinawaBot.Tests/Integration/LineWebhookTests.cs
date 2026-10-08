@@ -48,7 +48,7 @@ public class LineWebhookTests
                     Message = new LineMessage
                     {
                         Type = "text",
-                        Text = "Save"
+                        Text = "儲存"
                     }
                 }
             ]
@@ -160,7 +160,7 @@ public class LineWebhookTests
                 new LineEvent
                 {
                     Type = "message", ReplyToken = "token_3", Source = new LineSource { UserId = userId },
-                    Message = new LineMessage { Type = "text", Text = "Query" }
+                    Message = new LineMessage { Type = "text", Text = "查詢" }
                 }
             ]
         };
@@ -233,7 +233,7 @@ public class LineWebhookTests
                 new LineEvent
                 {
                     Type = "message", ReplyToken = "token_5", Source = new LineSource { UserId = userId },
-                    Message = new LineMessage { Type = "text", Text = "Edit" }
+                    Message = new LineMessage { Type = "text", Text = "編輯" }
                 }
             ]
         };
@@ -340,7 +340,7 @@ public class LineWebhookTests
                 new LineEvent
                 {
                     Type = "message", ReplyToken = "token_8", Source = new LineSource { UserId = userId },
-                    Message = new LineMessage { Type = "text", Text = "Delete" }
+                    Message = new LineMessage { Type = "text", Text = "刪除" }
                 }
             ]
         };
@@ -381,7 +381,7 @@ public class LineWebhookTests
                 new LineEvent
                 {
                     Type = "message", ReplyToken = "token_10", Source = new LineSource { UserId = userId },
-                    Message = new LineMessage { Type = "text", Text = "Continue" }
+                    Message = new LineMessage { Type = "text", Text = "繼續" }
                 }
             ]
         };

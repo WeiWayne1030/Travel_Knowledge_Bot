@@ -105,7 +105,7 @@ public class SaveFlowHandler : IRequestHandler<SaveFlowCommand, BotResponse>
             {
                 Message =
                     $"名稱「{saveRequest.Name}」已經存在，是否仍要儲存？\n" +
-                    "請輸入 Continue 或 Return。"
+                    "請輸入 繼續 或 返回主選單。"
             };
         }
 
@@ -121,7 +121,7 @@ public class SaveFlowHandler : IRequestHandler<SaveFlowCommand, BotResponse>
         ConversationContext context)
     {
         if (message.Equals(
-            "Return",
+            "返回主選單",
             StringComparison.OrdinalIgnoreCase))
         {
             context.PendingSave = null;
@@ -135,7 +135,7 @@ public class SaveFlowHandler : IRequestHandler<SaveFlowCommand, BotResponse>
         }
 
         if (message.Equals(
-            "Continue",
+            "繼續",
             StringComparison.OrdinalIgnoreCase))
         {
             if (context.PendingSave is null)
@@ -173,7 +173,7 @@ public class SaveFlowHandler : IRequestHandler<SaveFlowCommand, BotResponse>
 
         return new BotResponse
         {
-            Message = "請輸入 Continue 或 Return。"
+            Message = "請輸入 繼續 或 返回主選單。"
         };
     }
 }

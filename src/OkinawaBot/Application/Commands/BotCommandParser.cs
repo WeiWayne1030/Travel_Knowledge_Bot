@@ -6,11 +6,11 @@ public class BotCommandParser
     {
         return message.Trim().ToLowerInvariant() switch
         {
-            "save" => BotCommand.Save,
-            "query" => BotCommand.Query,
-            "edit" => BotCommand.Edit,
-            "delete" => BotCommand.Delete,
-            "return" => BotCommand.Return,
+            "儲存" => BotCommand.Save,
+            "查詢" => BotCommand.Query,
+            "編輯" => BotCommand.Edit,
+            "刪除" => BotCommand.Delete,
+            "返回主選單" => BotCommand.Return,
             "再見小幫手" => BotCommand.Sleep,
             _ => BotCommand.Unknown
         };

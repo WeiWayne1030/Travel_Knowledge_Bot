@@ -116,7 +116,7 @@ public class DeleteFlowHandler : IRequestHandler<DeleteFlowCommand, BotResponse>
         {
             Message =
                 $"確定要刪除「{selectedItem.Name}」嗎？\n" +
-                "請輸入 Continue 或 Return。"
+                "請輸入 繼續 或 返回主選單。"
         };
     }
 
@@ -140,13 +140,13 @@ public class DeleteFlowHandler : IRequestHandler<DeleteFlowCommand, BotResponse>
 
         if (!string.Equals(
                 message.Trim(),
-                "continue",
+                "繼續",
                 StringComparison.OrdinalIgnoreCase))
         {
             return new BotResponse
             {
                 Message =
-                    "請輸入 Continue 或 Return。"
+                    "請輸入 繼續 或 返回主選單。"
             };
         }
 

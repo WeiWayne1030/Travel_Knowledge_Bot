@@ -204,8 +204,8 @@ public class EditFlowHandler : IRequestHandler<EditFlowCommand, BotResponse>
             {
                 Message =
                     $"名稱「{request.Name}」已經存在。\n\n" +
-                    "如果仍然要儲存，請輸入 Continue。\n" +
-                    "如果不要修改，請輸入 Return。"
+                    "如果仍然要儲存，請輸入 繼續。\n" +
+                    "如果不要修改，請輸入 返回主選單。"
             };
         }
 
@@ -237,12 +237,12 @@ public class EditFlowHandler : IRequestHandler<EditFlowCommand, BotResponse>
         }
 
         if (!message.Trim()
-            .Equals("Continue", StringComparison.OrdinalIgnoreCase))
+            .Equals("繼續", StringComparison.OrdinalIgnoreCase))
         {
             return new BotResponse
             {
                 Message =
-                    "請輸入 Continue 或 Return。"
+                    "請輸入 繼續 或 返回主選單。"
             };
         }
 

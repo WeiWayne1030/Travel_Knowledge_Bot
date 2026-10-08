@@ -46,7 +46,7 @@ public class QueryFlowHandlerTests
 
         // Act
         var response =
-            await handler.Handle(new OkinawaBot.Application.Requests.QueryFlowCommand(userId, "Return"), CancellationToken.None);
+            await handler.Handle(new OkinawaBot.Application.Requests.QueryFlowCommand(userId, "返回主選單"), CancellationToken.None);
 
         // Assert
         var context =

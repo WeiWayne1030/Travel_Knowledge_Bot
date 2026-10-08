@@ -62,7 +62,7 @@ public class MessageHandlerTests
     {
         const string userId = "user-001";
         await HandleAsync(userId, "旅遊小幫手");
-        await HandleAsync(userId, "Save");
+        await HandleAsync(userId, "儲存");
 
         var context = _stateManager.GetOrCreate(userId);
         Assert.Equal(ConversationState.SaveFlow, context.State);
@@ -74,7 +74,7 @@ public class MessageHandlerTests
     {
         const string userId = "user-001";
         await HandleAsync(userId, "旅遊小幫手");
-        await HandleAsync(userId, "Query");
+        await HandleAsync(userId, "查詢");
 
         var context = _stateManager.GetOrCreate(userId);
         Assert.Equal(ConversationState.QueryFlow, context.State);
@@ -87,7 +87,7 @@ public class MessageHandlerTests
         const string userId = "user-001";
 
         await HandleAsync(userId, "旅遊小幫手");
-        await HandleAsync(userId, "Save");
+        await HandleAsync(userId, "儲存");
         await HandleAsync(userId, "https://example.com #ATTRACTION 美麗海水族館");
 
         var savedItem = Assert.Single(_repository.Items);
@@ -103,7 +103,7 @@ public class MessageHandlerTests
         const string userId = "user-001";
 
         await HandleAsync(userId, "旅遊小幫手");
-        await HandleAsync(userId, "Save");
+        await HandleAsync(userId, "儲存");
         await HandleAsync(userId, "https://example.com 美麗海水族館");
 
         Assert.Empty(_repository.Items);
@@ -116,11 +116,11 @@ public class MessageHandlerTests
         const string userId = "user-001";
 
         await HandleAsync(userId, "旅遊小幫手");
-        await HandleAsync(userId, "Save");
+        await HandleAsync(userId, "儲存");
         await HandleAsync(userId, "https://example.com #ATTRACTION 美麗海水族館");
 
         await HandleAsync(userId, "旅遊小幫手");
-        await HandleAsync(userId, "Save");
+        await HandleAsync(userId, "儲存");
         await HandleAsync(userId, "https://example.com/2 #ATTRACTION 美麗海水族館");
 
         Assert.Single(_repository.Items);
@@ -133,8 +133,8 @@ public class MessageHandlerTests
         const string userId = "user-001";
 
         await HandleAsync(userId, "旅遊小幫手");
-        await HandleAsync(userId, "Save");
-        await HandleAsync(userId, "return");
+        await HandleAsync(userId, "儲存");
+        await HandleAsync(userId, "返回主選單");
 
         var context = _stateManager.GetOrCreate(userId);
         Assert.Equal(ConversationState.Idle, context.State);
@@ -160,7 +160,7 @@ public class MessageHandlerTests
         const string userId = "user-1";
 
         await HandleAsync(userId, "旅遊小幫手");
-        await HandleAsync(userId, "Edit");
+        await HandleAsync(userId, "編輯");
 
         var context = _stateManager.GetOrCreate(userId);
         Assert.Equal(ConversationState.EditItemSelection, context.State);
@@ -194,7 +194,7 @@ public class MessageHandlerTests
     public async Task HandleAsync_WhenDeleteCommand_ShouldEnterDeleteFlow()
     {
         await HandleAsync("test-user", "旅遊小幫手");
-        await HandleAsync("test-user", "Delete");
+        await HandleAsync("test-user", "刪除");
 
         var context = _stateManager.GetOrCreate("test-user");
         Assert.Equal(ConversationState.DeleteFlow, context.State);
@@ -204,8 +204,8 @@ public class MessageHandlerTests
     public async Task HandleAsync_WhenInDeleteFlowAndReturn_ShouldGoBackToMainMenu()
     {
         await HandleAsync("test-user", "旅遊小幫手");
-        await HandleAsync("test-user", "Delete");
-        await HandleAsync("test-user", "Return");
+        await HandleAsync("test-user", "刪除");
+        await HandleAsync("test-user", "返回主選單");
 
         var context = _stateManager.GetOrCreate("test-user");
         Assert.Equal(ConversationState.Idle, context.State);

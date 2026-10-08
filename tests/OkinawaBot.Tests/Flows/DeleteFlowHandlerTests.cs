@@ -110,11 +110,11 @@ public class DeleteFlowHandlerTests
             response.Message);
 
         Assert.Contains(
-            "Continue",
+            "繼續",
             response.Message);
 
         Assert.Contains(
-            "Return",
+            "返回主選單",
             response.Message);
     }
 
@@ -255,7 +255,7 @@ public class DeleteFlowHandlerTests
 
         // Act
         var response =
-            await handler.Handle(new OkinawaBot.Application.Requests.DeleteFlowCommand("test-user", "Return"), CancellationToken.None);
+            await handler.Handle(new OkinawaBot.Application.Requests.DeleteFlowCommand("test-user", "返回主選單"), CancellationToken.None);
 
         // Assert
         Assert.Equal(
@@ -311,7 +311,7 @@ public class DeleteFlowHandlerTests
 
         // Act
         var response =
-            await handler.Handle(new OkinawaBot.Application.Requests.DeleteFlowCommand("test-user", "Continue"), CancellationToken.None);
+            await handler.Handle(new OkinawaBot.Application.Requests.DeleteFlowCommand("test-user", "繼續"), CancellationToken.None);
 
         // Assert
         Assert.Equal(
@@ -385,7 +385,7 @@ public class DeleteFlowHandlerTests
         Assert.NotNull(item);
 
         Assert.Contains(
-            "Continue 或 Return",
+            "繼續 或 返回主選單",
             response.Message);
     }
 }

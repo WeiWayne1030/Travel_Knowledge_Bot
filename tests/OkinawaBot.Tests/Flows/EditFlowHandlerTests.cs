@@ -43,7 +43,7 @@ public class EditFlowHandlerTests
             userId,
             ConversationState.EditItemSelection);
 
-        var result = await _handler.Handle(new OkinawaBot.Application.Requests.EditFlowCommand(userId, "Return"), CancellationToken.None);
+        var result = await _handler.Handle(new OkinawaBot.Application.Requests.EditFlowCommand(userId, "返回主選單"), CancellationToken.None);
 
         var context =
             _stateManager.GetOrCreate(userId);
@@ -374,7 +374,7 @@ public class EditFlowHandlerTests
                 Category = "Attraction"
             };
 
-        var result = await _handler.Handle(new OkinawaBot.Application.Requests.EditFlowCommand(userId, "Return"), CancellationToken.None);
+        var result = await _handler.Handle(new OkinawaBot.Application.Requests.EditFlowCommand(userId, "返回主選單"), CancellationToken.None);
 
         Assert.Equal(
             ConversationState.Idle,
@@ -428,7 +428,7 @@ public class EditFlowHandlerTests
                 Category = "Restaurant"
             };
 
-        var result = await _handler.Handle(new OkinawaBot.Application.Requests.EditFlowCommand(userId, "Continue"), CancellationToken.None);
+        var result = await _handler.Handle(new OkinawaBot.Application.Requests.EditFlowCommand(userId, "繼續"), CancellationToken.None);
 
         var updatedItem =
             await _repository.FindByIdAsync(item.Id);

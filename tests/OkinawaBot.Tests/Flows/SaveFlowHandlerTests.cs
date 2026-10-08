@@ -46,7 +46,7 @@ public class SaveFlowHandlerTests
 
         // Act
         var response =
-            await handler.Handle(new OkinawaBot.Application.Requests.SaveFlowCommand(userId, "Return"), CancellationToken.None);
+            await handler.Handle(new OkinawaBot.Application.Requests.SaveFlowCommand(userId, "返回主選單"), CancellationToken.None);
 
         // Assert
         var context =
@@ -281,7 +281,7 @@ public class SaveFlowHandlerTests
 
         // Act
         var response =
-            await handler.Handle(new OkinawaBot.Application.Requests.SaveFlowCommand(userId, "Continue"), CancellationToken.None);
+            await handler.Handle(new OkinawaBot.Application.Requests.SaveFlowCommand(userId, "繼續"), CancellationToken.None);
 
         // Assert
         var context =
@@ -344,7 +344,7 @@ public class SaveFlowHandlerTests
 
         // Act
         var response =
-            await handler.Handle(new OkinawaBot.Application.Requests.SaveFlowCommand(userId, "Return"), CancellationToken.None);
+            await handler.Handle(new OkinawaBot.Application.Requests.SaveFlowCommand(userId, "返回主選單"), CancellationToken.None);
 
         // Assert
         var context =
