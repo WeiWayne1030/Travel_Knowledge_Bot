@@ -70,7 +70,15 @@ dotnet ef database update
 
 ### 1. 啟動專案 (Run Application)
 
-從根目錄執行以下指令啟動 Web API 服務：
+#### 透過 Docker (推薦)
+若您有安裝 Docker，可以直接在根目錄執行：
+```bash
+docker-compose up -d --build
+```
+這將會同時啟動 Web API、SQLite (含掛載持久化資料夾 `./data`)，以及 Redis 快取伺服器。
+
+#### 透過 .NET CLI
+若要在本地端直接執行，請從根目錄執行以下指令啟動 Web API 服務：
 
 ```bash
 dotnet run --project src/OkinawaBot/OkinawaBot.csproj
@@ -98,6 +106,24 @@ dotnet run
 
 ---
 
+## ☁️ 部署指南 (Deployment - Zeabur)
+
+本專案支援一鍵部署至容器化雲端平台，如 [Zeabur](https://zeabur.com/)。由於 SQLite 是以單一檔案 (`okinawa.db`) 形式存在，請務必按照以下步驟設定**持久化儲存空間 (Persistent Volume)**，避免重新部署時遺失資料：
+
+1. 在 Zeabur 建立一個新專案並透過 GitHub 部署本服務。
+2. 點入您的 `OkinawaBot` 服務，前往 **Volume (儲存空間)** 設定分頁。
+3. 點擊新增 Volume，並設定 **Mount Path (掛載路徑)** 為：`/app/data`。
+4. 前往 **Variables (環境變數)** 設定分頁，新增資料庫連線字串，將原本預設的本機路徑指向剛才掛載的目錄：
+   - **Key**: `ConnectionStrings__DefaultConnection`
+   - **Value**: `Data Source=/app/data/okinawa.db`
+5. 設定完成後重新部署 (Redeploy)，您的資料庫就會安穩地保存在雲端硬碟中。
+
+另外，如果需要 Redis 保存對話狀態，也可以在 Zeabur 新增一個 Redis 服務，並在變數加入：
+- **Key**: `ConnectionStrings__RedisConnection`
+- **Value**: `<Zeabur 提供的 Redis 連線字串>`
+
+---
+
 ## 📂 專案結構 (Project Structure)
 
 ```text
@@ -113,6 +139,10 @@ Okinawa_Travel_Knowledge_Bot/
 │       ├── Models/       # 資料模型
 │       ├── Program.cs    # 程式進入點與 DI 設定
 │       └── okinawa.db    # SQLite 資料庫檔案
+├── tests/
+│   └── OkinawaBot.Tests/ # xUnit 單元與整合測試
+├── docker-compose.yml    # Docker Compose 配置檔
+├── Dockerfile            # 容器化建置腳本
 ├── global.json           # .NET SDK 版本控制
 └── OkinawaBot.sln        # 解決方案檔
 ```
