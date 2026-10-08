@@ -41,7 +41,11 @@ public class LineWebhookController : ControllerBase
             return Unauthorized("Invalid signature.");
         }
 
-        var request = JsonSerializer.Deserialize<LineWebhookRequest>(body);
+        var options = new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        };
+        var request = JsonSerializer.Deserialize<LineWebhookRequest>(body, options);
         if (request?.Events == null)
         {
             return Ok();
