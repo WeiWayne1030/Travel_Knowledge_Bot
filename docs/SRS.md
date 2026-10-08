@@ -62,13 +62,13 @@ The system is initially designed for a single personal user who collects and org
 ## 6. Functional Requirements
 FR-001 — Bot Activation and Main Menu
 
-The system SHALL provide a bot activation mechanism. When the user activates the bot, the system SHALL display a welcome message and the available commands.
+The system SHALL provide a bot activation mechanism. When the user activates the bot by typing `旅遊小幫手`, the system SHALL display a welcome message and the available commands. The user can also type `再見小幫手` to deactivate the bot.
 
 Available commands:
--Save
--Query
--Edit
--Delete
+- 儲存 (Save)
+- 查詢 (Query)
+- 編輯 (Edit)
+- 刪除 (Delete)
 
 Acceptance Criteria
 
@@ -88,7 +88,7 @@ Then the system SHALL provide the available commands: Save, Query, Edit and Dele
 
 FR-002 — Command Selection
 
-The system SHALL allow the user to select an operation from the Main Menu by entering one of the supported commands: Save, Query, Edit, or Delete.
+The system SHALL allow the user to select an operation from the Main Menu by entering one of the supported commands: 儲存, 查詢, 編輯, or 刪除.
 
 The user SHALL be able to select one of these functions.
 
@@ -97,7 +97,7 @@ Business Rules
 <!-- 第一版先只支援增刪改查-->
 BR-001
 
-The system SHALL support the Save, Query, Edit and Delete functions in the initial version.
+The system SHALL support the 儲存, 查詢, 編輯 and 刪除 functions in the initial version.
 
 BR-002
 
@@ -107,25 +107,25 @@ Acceptance Criteria
 AC-002-01
 
 Given the user has activated the bot
-When the user selects Save
+When the user selects 儲存
 Then the system SHALL enter the Save flow.
 
 AC-002-02
 
 Given the user has activated the bot
-When the user selects Query
+When the user selects 查詢
 Then the system SHALL enter the Query flow.
 
 AC-002-03
 
 Given the user has activated the bot
-When the user selects Edit
+When the user selects 編輯
 Then the system SHALL enter the Edit flow.
 
 AC-002-04
 
 Given the user has activated the bot
-When the user selects Delete
+When the user selects 刪除
 Then the system SHALL enter the Delete flow.
 
 FR-003 — Conversation State Management
@@ -175,7 +175,7 @@ Then the system SHALL proceed to input validation.
 
 FR-004 — Return Command
 
-The system SHALL allow the user to enter `Return` from any interactive flow and return to the Main Menu.
+The system SHALL allow the user to enter `返回主選單` from any interactive flow and return to the Main Menu.
 
 Business Rules
 
@@ -192,25 +192,25 @@ Acceptance Criteria
 AC-004-01
 
 Given the user is in the Save flow
-When the user enters `Return`
+When the user enters `返回主選單`
 Then the system SHALL return the user to the Main Menu.
 
 AC-004-02
 
 Given the user is in the Query flow
-When the user enters `Return`
+When the user enters `返回主選單`
 Then the system SHALL return the user to the Main Menu.
 
 AC-004-03
 
 Given the user is in the Edit flow
-When the user enters `Return`
+When the user enters `返回主選單`
 Then the system SHALL return the user to the Main Menu.
 
 AC-004-04
 
 Given the user is in the Delete flow
-When the user enters `Return`
+When the user enters `返回主選單`
 Then the system SHALL return the user to the Main Menu.
 
 FR-005 — Parse URL, name and Category
@@ -312,7 +312,7 @@ Then the system SHALL store the category as Shopping.
 
 FR-008 — Display Query Categories
 
-When the user selects the Query function, the system SHALL display the available categories that can be queried.
+When the user selects the Query function (查詢), the system SHALL dynamically fetch and display the available unique categories from the database.
 
 Example categories may include:
 
@@ -547,26 +547,26 @@ FR-016 — Duplicate Name Confirmation
 When the user submits a Save request with a name that matches an existing saved item, the system SHALL warn the user that the name is already in use and ask the user to confirm whether to continue saving.
 
 The user SHALL respond with one of the following commands:
--Continue
--Return
+-繼續 (Continue)
+-返回主選單 (Return)
 
 Business Rules
 
 BR-027
 
-The system SHALL allow duplicate names only after the user confirms with `Continue`.
+The system SHALL allow duplicate names only after the user confirms with `繼續`.
 
 BR-031
 
-While waiting for confirmation, the system SHALL keep the pending Save request and SHALL NOT store it until the user enters `Continue`.
+While waiting for confirmation, the system SHALL keep the pending Save request and SHALL NOT store it until the user enters `繼續`.
 
 BR-032
 
-When the user enters `Return` during confirmation, the system SHALL discard the pending Save request and return the user to the Main Menu.
+When the user enters `返回主選單` during confirmation, the system SHALL discard the pending Save request and return the user to the Main Menu.
 
 BR-033
 
-When the user enters any input other than `Continue` or `Return` during confirmation, the system SHALL ask the user again to enter `Continue` or `Return` and SHALL remain in the confirmation state.
+When the user enters any input other than `繼續` or `返回主選單` during confirmation, the system SHALL ask the user again to enter `繼續` or `返回主選單` and SHALL remain in the confirmation state.
 
 Acceptance Criteria
 
@@ -574,25 +574,25 @@ AC-016-01
 
 Given an item with the submitted name already exists
 When the user submits a valid Save request
-Then the system SHALL display a duplicate-name warning and ask the user to enter Continue or Return.
+Then the system SHALL display a duplicate-name warning and ask the user to enter 繼續 or 返回主選單.
 
 AC-016-02
 
 Given the system is waiting for duplicate-name confirmation
-When the user enters Continue
+When the user enters 繼續
 Then the system SHALL save the item, notify the user that the item was successfully saved and return the user to the Main Menu.
 
 AC-016-03
 
 Given the system is waiting for duplicate-name confirmation
-When the user enters Return
+When the user enters 返回主選單
 Then the system SHALL NOT save the item, SHALL notify the user that saving was cancelled and return the user to the Main Menu.
 
 AC-016-04
 
 Given the system is waiting for duplicate-name confirmation
-When the user enters any input other than Continue or Return
-Then the system SHALL ask the user again to enter Continue or Return.
+When the user enters any input other than 繼續 or 返回主選單
+Then the system SHALL ask the user again to enter 繼續 or 返回主選單.
 
 AC-016-05
 

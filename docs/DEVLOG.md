@@ -2,7 +2,7 @@
 
 本文件記錄 **Okinawa Travel Knowledge Bot** 從需求分析到實作的開發歷程，方便日後回顧設計決策、追蹤進度與規劃下一步。
 
-> 最後更新：2026-10-07
+> 最後更新：2026-10-08
 > 分支：`main`（遠端 `origin/main`）
 
 ---
@@ -24,7 +24,8 @@
 | 11 | 2026-10-06 | `099a356` | 引入 MediatR 架構重構 | 為了解耦 Controller 與 Handler，引入 MediatR 套件，將所有 FlowHandler 重構為 `IRequestHandler`，並將主邏輯移至 `ProcessMessageCommandHandler`，全面修復單元測試。 |
 | 12 | 2026-10-07 | `c175143` | LINE Webhook 串接與 API 控制器實作 | 實作 `LineWebhookController`、`LineSignatureValidator` 簽章驗證、`LineClient` API 回覆機制與完整 Webhook DTO 模型。 |
 | 13 | 2026-10-07 | `a812092` | 整合 Redis 狀態管理與 Docker 部署 | 引入 StackExchangeRedisCache 進行對話狀態分散式快取，建立 Dockerfile 與 docker-compose.yml 達成 API、Redis 與 SQLite 資料持久化部署。 |
-| 14 | 2026-10-07 | (待提交) | 徹底重構與資安修補 | 將測試用的後門與不雅程式碼移除。導入 `ILineClient` 介面進行 DI 抽換，並在測試環境動態生成真實 HMAC 簽章以修補 `LineSignatureValidator` 的資安漏洞。 |
+| 14 | 2026-10-07 | `b5329fc` | 徹底重構與資安修補 | 將測試用的後門與不雅程式碼移除。導入 `ILineClient` 介面進行 DI 抽換，並在測試環境動態生成真實 HMAC 簽章以修補 `LineSignatureValidator` 的資安漏洞。 |
+| 15 | 2026-10-08 | (待提交) | 流程優化與中文化體驗 | 新增喚醒/休眠機制（旅遊小幫手/再見小幫手）。全面將指令中文化（儲存、查詢、編輯、刪除、繼續、返回主選單）。強化 Query 功能動態拉取資料庫現有分類提示使用者。 |
 ---
 
 ## 📌 各階段詳細紀錄
@@ -229,6 +230,21 @@
   - 移除該後門，並改在整合測試 `LineWebhookTests.cs` 中，利用測試用密鑰 `"test_secret"` 動態算出真實的 HMAC-SHA256 簽章並送出請求，以 100% 真實情境通過驗證。
 - **結果**：正式環境的程式碼達到了 100% Clean Code，且 64 個整合/單元測試依然順利通過。
 
+### Phase 15 — 流程優化與中文化體驗（`待提交`）
+
+**目標**：優化使用者體驗，讓機器人更貼近中文語境，並且增加進入選單的防呆機制。
+
+- **新增喚醒與休眠機制**：
+  - `ProcessMessageCommandHandler` 現在會攔截 `Idle` 狀態。使用者需輸入 `旅遊小幫手` 才能喚醒機器人並進入 `MainMenu`。
+  - 在 `MainMenu` 時，輸入 `再見小幫手` 可讓系統重置為 `Idle` 狀態，避免意外觸發功能。
+- **全面指令中文化**：
+  - 原先的 `Save` / `Query` / `Edit` / `Delete` 變更為 `儲存` / `查詢` / `編輯` / `刪除`。
+  - 二次確認與中斷操作的指令從 `Continue` / `Return` 變更為 `繼續` / `返回主選單`。
+  - 修改 `BotCommandParser` 內部映射，並全數更新測試案例，確保 65 支單元/整合測試正確通過。
+- **動態提示查詢分類**：
+  - 修改 `ITravelItemRepository` 新增 `GetDistinctCategoriesAsync()`，可利用 EF Core 的 `.Distinct()` 語法，效能極佳地撈出資料庫現有分類。
+  - 將 `QueryService` 注入至 `ProcessMessageCommandHandler`。當使用者輸入 `查詢` 時，除了顯示提示訊息外，會動態列出目前擁有的類別，大幅提升 UX（解決了 FR-008 未知分類的痛點）。
+
 ---
 
 ## ✅ SRS 需求實作進度
@@ -250,14 +266,13 @@
 | FR-013 | 缺 Name 的處理 | ✅ 已完成 |
 | FR-014 | 編輯 | ✅ 已完成（包含確認流程） |
 | FR-015 | 刪除 | ✅ 已完成（包含確認流程） |
-| FR-016 | 名稱重複確認 | ✅ 已完成（Continue / Return 確認流程） |
+| FR-016 | 名稱重複確認 | ✅ 已完成（繼續 / 返回主選單 確認流程） |
 | — | LINE Webhook 串接 | ✅ 已完成（`LineWebhookController` 支援 HMAC-SHA256 簽章驗證、MediatR 轉發與 LINE 回覆 API） |
 
 ---
 
 ## 🧹 已知問題與技術債
 
-- 還沒有「系統支援的分類」白名單（FR-008 / BR-013 需要）。
 - `.github/workflows/` 目錄是空的，還沒有 CI。
 
 ---

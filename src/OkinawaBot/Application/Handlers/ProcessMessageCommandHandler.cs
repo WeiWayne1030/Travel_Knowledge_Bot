@@ -41,7 +41,7 @@ public class ProcessMessageCommandHandler : IRequestHandler<ProcessMessageComman
                 _stateManager.SetState(userId, ConversationState.MainMenu);
                 response = new BotResponse
                 {
-                    Message = "您好！我是旅遊小幫手。\n請輸入 儲存、查詢、編輯、刪除或輸入「再見小幫手退出」。"
+                    Message = "您好！我是旅遊小幫手。\n請輸入 儲存、查詢、編輯、刪除或輸入「再見小幫手」退出。"
                 };
             }
             else
