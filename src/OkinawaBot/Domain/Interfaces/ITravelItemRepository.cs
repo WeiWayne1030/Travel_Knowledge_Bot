@@ -1,4 +1,4 @@
-﻿using OkinawaBot.Domain.Entities;
+using OkinawaBot.Domain.Entities;
 
 namespace OkinawaBot.Domain.Interfaces;
 
@@ -20,4 +20,6 @@ public interface ITravelItemRepository
         TravelItem item);
 
     Task<IReadOnlyList<TravelItem>> GetAllAsync();
+
+    Task<IReadOnlyList<string>> GetDistinctCategoriesAsync();
 }

@@ -75,4 +75,16 @@ public class FakeTravelItemRepository : ITravelItemRepository
 
         return Task.FromResult(items);
     }
+
+    public Task<IReadOnlyList<string>> GetDistinctCategoriesAsync()
+    {
+        IReadOnlyList<string> categories =
+            _items
+                .Select(x => x.Category)
+                .Distinct()
+                .OrderBy(c => c)
+                .ToList();
+
+        return Task.FromResult(categories);
+    }
 }

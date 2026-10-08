@@ -11,15 +11,18 @@ public class ProcessMessageCommandHandler : IRequestHandler<ProcessMessageComman
     private readonly ConversationStateManager _stateManager;
     private readonly BotCommandParser _commandParser;
     private readonly IMediator _mediator;
+    private readonly OkinawaBot.Application.Services.QueryService _queryService;
 
     public ProcessMessageCommandHandler(
         ConversationStateManager stateManager,
         BotCommandParser commandParser,
-        IMediator mediator)
+        IMediator mediator,
+        OkinawaBot.Application.Services.QueryService queryService)
     {
         _stateManager = stateManager;
         _commandParser = commandParser;
         _mediator = mediator;
+        _queryService = queryService;
     }
 
     public async Task<BotResponse> Handle(ProcessMessageCommand request, CancellationToken cancellationToken)
@@ -51,7 +54,7 @@ public class ProcessMessageCommandHandler : IRequestHandler<ProcessMessageComman
         }
         else if (context.State == ConversationState.MainMenu)
         {
-            response = HandleMainMenu(userId, message);
+            response = await HandleMainMenuAsync(userId, message);
         }
         else if (context.State == ConversationState.SaveFlow ||
             context.State == ConversationState.SaveDuplicateConfirmation)
@@ -85,7 +88,7 @@ public class ProcessMessageCommandHandler : IRequestHandler<ProcessMessageComman
         return response;
     }
 
-    private BotResponse HandleMainMenu(
+    private async Task<BotResponse> HandleMainMenuAsync(
         string userId,
         string message)
     {
@@ -100,29 +103,34 @@ public class ProcessMessageCommandHandler : IRequestHandler<ProcessMessageComman
                     Message =
                         "請輸入旅遊資訊：\n" +
                         "URL\n" +
-                        "#Category\n" +
-                        "Name"
+                        "#類別\n" +
+                        "名稱"
                 };
 
             case BotCommand.Query:
                 _stateManager.SetState(userId, ConversationState.QueryFlow);
+                var categories = await _queryService.GetAvailableCategoriesAsync();
+                var categoriesMsg = categories.Any() 
+                    ? "\n目前有的類別：\n" + string.Join("\n", categories)
+                    : "\n目前還沒有任何類別。";
+
                 return new BotResponse
                 {
-                    Message = "請輸入要查詢的 Category。"
+                    Message = $"""請輸入要查詢的類別或"返回選單"。{categoriesMsg}"""
                 };
 
             case BotCommand.Edit:
                 _stateManager.SetState(userId, ConversationState.EditItemSelection);
                 return new BotResponse
                 {
-                    Message = "請輸入要編輯的項目編號。"
+                    Message = """請輸入要編輯的項目編號或"返回選單"。"""
                 };
 
             case BotCommand.Delete:
                 _stateManager.SetState(userId, ConversationState.DeleteFlow);
                 return new BotResponse
                 {
-                    Message = "請輸入要刪除的項目編號。"
+                    Message = """請輸入要刪除的項目編號或"返回選單"。"""
                 };
 
             case BotCommand.Sleep:

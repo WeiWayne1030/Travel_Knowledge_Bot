@@ -1,4 +1,4 @@
-﻿using OkinawaBot.Domain.Entities;
+using OkinawaBot.Domain.Entities;
 using OkinawaBot.Domain.Interfaces;
 
 namespace OkinawaBot.Application.Services;
@@ -23,5 +23,10 @@ public class QueryService
 
         return await _repository.FindByCategoryAsync(
             category);
+    }
+
+    public async Task<IReadOnlyList<string>> GetAvailableCategoriesAsync()
+    {
+        return await _repository.GetDistinctCategoriesAsync();
     }
 }

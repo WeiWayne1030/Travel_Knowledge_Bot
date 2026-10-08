@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using OkinawaBot.Domain.Entities;
 using OkinawaBot.Domain.Interfaces;
 using OkinawaBot.Infrastructure.Data;
@@ -65,6 +65,15 @@ public class TravelItemRepository : ITravelItemRepository
     {
         return await _db.TravelItems
             .OrderBy(x => x.Id)
+            .ToListAsync();
+    }
+
+    public async Task<IReadOnlyList<string>> GetDistinctCategoriesAsync()
+    {
+        return await _db.TravelItems
+            .Select(x => x.Category)
+            .Distinct()
+            .OrderBy(c => c)
             .ToListAsync();
     }
 }

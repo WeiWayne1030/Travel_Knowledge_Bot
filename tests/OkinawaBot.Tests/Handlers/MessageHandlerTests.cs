@@ -48,7 +48,8 @@ public class MessageHandlerTests
         _handler = new ProcessMessageCommandHandler(
             _stateManager,
             provider.GetRequiredService<BotCommandParser>(),
-            _mediator);
+            _mediator,
+            provider.GetRequiredService<QueryService>());
     }
 
     private Task HandleAsync(string userId, string message)
