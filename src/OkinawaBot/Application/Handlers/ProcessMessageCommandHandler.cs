@@ -8,6 +8,9 @@ namespace OkinawaBot.Application.Handlers;
 
 public class ProcessMessageCommandHandler : IRequestHandler<ProcessMessageCommand, BotResponse>
 {
+    private const string WakeUpNotice =
+        "您好！我是旅遊小幫手。\n請輸入 儲存、查詢、編輯、刪除或輸入「再見小幫手」退出。";
+
     private readonly ConversationStateManager _stateManager;
     private readonly BotCommandParser _commandParser;
     private readonly IMediator _mediator;
@@ -41,7 +44,7 @@ public class ProcessMessageCommandHandler : IRequestHandler<ProcessMessageComman
                 _stateManager.SetState(userId, ConversationState.MainMenu);
                 response = new BotResponse
                 {
-                    Message = "您好！我是旅遊小幫手。\n請輸入 儲存、查詢、編輯、刪除或輸入「再見小幫手」退出。"
+                    Message = WakeUpNotice
                 };
             }
             else
@@ -51,6 +54,23 @@ public class ProcessMessageCommandHandler : IRequestHandler<ProcessMessageComman
                     Message = string.Empty
                 };
             }
+        }
+        else if (_commandParser.Parse(message) == BotCommand.Sleep)
+        {
+            _stateManager.Reset(userId);
+            response = new BotResponse
+            {
+                Message = "已退出小幫手。"
+            };
+        }
+        else if (_commandParser.Parse(message) == BotCommand.Return)
+        {
+            _stateManager.Reset(userId);
+            _stateManager.SetState(userId, ConversationState.MainMenu);
+            response = new BotResponse
+            {
+                Message = WakeUpNotice
+            };
         }
         else if (context.State == ConversationState.MainMenu)
         {
@@ -116,21 +136,21 @@ public class ProcessMessageCommandHandler : IRequestHandler<ProcessMessageComman
 
                 return new BotResponse
                 {
-                    Message = $"""請輸入要查詢的類別或"返回選單"。{categoriesMsg}"""
+                    Message = $"""請輸入要查詢的類別或"返回主選單"。{categoriesMsg}"""
                 };
 
             case BotCommand.Edit:
                 _stateManager.SetState(userId, ConversationState.EditItemSelection);
                 return new BotResponse
                 {
-                    Message = """請輸入要編輯的項目編號或"返回選單"。"""
+                    Message = """請輸入要編輯的項目編號或"返回主選單"。"""
                 };
 
             case BotCommand.Delete:
                 _stateManager.SetState(userId, ConversationState.DeleteFlow);
                 return new BotResponse
                 {
-                    Message = """請輸入要刪除的項目編號或"返回選單"。"""
+                    Message = """請輸入要刪除的項目編號或"返回主選單"。"""
                 };
 
             case BotCommand.Sleep:

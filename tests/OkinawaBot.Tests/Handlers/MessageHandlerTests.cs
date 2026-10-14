@@ -138,7 +138,7 @@ public class MessageHandlerTests
         await HandleAsync(userId, "返回主選單");
 
         var context = _stateManager.GetOrCreate(userId);
-        Assert.Equal(ConversationState.Idle, context.State);
+        Assert.Equal(ConversationState.MainMenu, context.State);
     }
 
     // 驗證輸入 再見小幫手 時，能正確返回 Idle (退出小幫手)
@@ -209,6 +209,43 @@ public class MessageHandlerTests
         await HandleAsync("test-user", "返回主選單");
 
         var context = _stateManager.GetOrCreate("test-user");
-        Assert.Equal(ConversationState.Idle, context.State);
+        Assert.Equal(ConversationState.MainMenu, context.State);
+    }
+
+    // 驗證任何 Flow 狀態下輸入「返回主選單」，皆會清除暫存並回到 MainMenu
+    [Theory]
+    [InlineData(ConversationState.SaveFlow)]
+    [InlineData(ConversationState.SaveDuplicateConfirmation)]
+    [InlineData(ConversationState.QueryFlow)]
+    [InlineData(ConversationState.EditItemSelection)]
+    [InlineData(ConversationState.EditDataInput)]
+    [InlineData(ConversationState.EditDuplicateConfirmation)]
+    [InlineData(ConversationState.DeleteFlow)]
+    [InlineData(ConversationState.DeleteConfirmation)]
+    public async Task HandleAsync_ReturnFromAnyFlow_ShouldResetAndGoToMainMenu(ConversationState state)
+    {
+        const string userId = "user-return";
+
+        var context = _stateManager.GetOrCreate(userId);
+        context.State = state;
+        context.CurrentItemId = 1;
+        context.PendingSave = new OkinawaBot.Application.Models.SaveTravelItemRequest
+        {
+            Url = "https://example.com", Category = "Attraction", Name = "美麗海水族館"
+        };
+        context.PendingEdit = new OkinawaBot.Application.Models.UpdateTravelItemRequest
+        {
+            Url = "https://example.com", Category = "Attraction", Name = "美麗海水族館"
+        };
+
+        var response = await _handler.Handle(
+            new ProcessMessageCommand(userId, "返回主選單"), CancellationToken.None);
+
+        Assert.Equal(ConversationState.MainMenu, context.State);
+        Assert.Null(context.CurrentItemId);
+        Assert.Null(context.PendingSave);
+        Assert.Null(context.PendingEdit);
+        Assert.Contains("旅遊小幫手", response.Message);
+        Assert.Empty(_repository.Items);
     }
 }

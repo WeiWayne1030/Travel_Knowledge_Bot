@@ -1,7 +1,6 @@
 using System.Text;
 using MediatR;
 using OkinawaBot.Application.Requests;
-using OkinawaBot.Application.Commands;
 using OkinawaBot.Application.Models;
 using OkinawaBot.Application.Services;
 using OkinawaBot.Application.State;
@@ -11,16 +10,13 @@ namespace OkinawaBot.Application.Flows;
 public class QueryFlowHandler : IRequestHandler<QueryFlowCommand, BotResponse>
 {
     private readonly ConversationStateManager _stateManager;
-    private readonly BotCommandParser _commandParser;
     private readonly QueryService _queryService;
 
     public QueryFlowHandler(
         ConversationStateManager stateManager,
-        BotCommandParser commandParser,
         QueryService queryService)
     {
         _stateManager = stateManager;
-        _commandParser = commandParser;
         _queryService = queryService;
     }
 
@@ -30,22 +26,6 @@ public class QueryFlowHandler : IRequestHandler<QueryFlowCommand, BotResponse>
     {
         var userId = request.UserId;
         var message = request.Message;
-
-        var context =
-            _stateManager.GetOrCreate(userId);
-
-        var command =
-            _commandParser.Parse(message);
-
-        if (command == BotCommand.Return)
-        {
-            _stateManager.Reset(userId);
-
-            return new BotResponse
-            {
-                Message = "已回到主選單。"
-            };
-        }
 
         var category = message.Trim();
 

@@ -2,7 +2,7 @@
 
 本文件記錄 **Okinawa Travel Knowledge Bot** 從需求分析到實作的開發歷程，方便日後回顧設計決策、追蹤進度與規劃下一步。
 
-> 最後更新：2026-10-08
+> 最後更新：2026-10-14
 > 分支：`main`（遠端 `origin/main`）
 
 ---
@@ -25,7 +25,8 @@
 | 12 | 2026-10-07 | `c175143` | LINE Webhook 串接與 API 控制器實作 | 實作 `LineWebhookController`、`LineSignatureValidator` 簽章驗證、`LineClient` API 回覆機制與完整 Webhook DTO 模型。 |
 | 13 | 2026-10-07 | `a812092` | 整合 Redis 狀態管理與 Docker 部署 | 引入 StackExchangeRedisCache 進行對話狀態分散式快取，建立 Dockerfile 與 docker-compose.yml 達成 API、Redis 與 SQLite 資料持久化部署。 |
 | 14 | 2026-10-07 | `b5329fc` | 徹底重構與資安修補 | 將測試用的後門與不雅程式碼移除。導入 `ILineClient` 介面進行 DI 抽換，並在測試環境動態生成真實 HMAC 簽章以修補 `LineSignatureValidator` 的資安漏洞。 |
-| 15 | 2026-10-08 | (待提交) | 流程優化與中文化體驗 | 新增喚醒/休眠機制（旅遊小幫手/再見小幫手）。全面將指令中文化（儲存、查詢、編輯、刪除、繼續、返回主選單）。強化 Query 功能動態拉取資料庫現有分類提示使用者。 |
+| 15 | 2026-10-08 | `e375d38` | 流程優化與中文化體驗 | 新增喚醒/休眠機制（旅遊小幫手/再見小幫手）。全面將指令中文化（儲存、查詢、編輯、刪除、繼續、返回主選單）。強化 Query 功能動態拉取資料庫現有分類提示使用者。 |
+| 16 | 2026-10-14 | `64825ee` | 修復 CRUD 流程無法退出選單 | 「再見小幫手」/「返回主選單」改為全域攔截；返回主選單會重置暫存並重新顯示喚醒提示；統一提示文字為「返回主選單」。 |
 ---
 
 ## 📌 各階段詳細紀錄
@@ -217,7 +218,7 @@
   - 利用環境變數 `ConnectionStrings__RedisConnection=redis:6379` 覆寫原本 `appsettings.json` 的設定以符合 Docker 內部網路。
   - 配置 `./data` 掛載供 SQLite (`okinawa.db`) 持久化，並開啟 Redis 的 `appendonly` 以保存快取狀態。
 
-### Phase 14 — 徹底重構與資安修補（`已完成`）
+### Phase 14 — 徹底重構與資安修補（`b5329fc`）
 
 **目標**：清除所有為了整合測試而在正式程式碼中留下的不雅寫法（Code Smell）與資安後門。
 
@@ -230,7 +231,7 @@
   - 移除該後門，並改在整合測試 `LineWebhookTests.cs` 中，利用測試用密鑰 `"test_secret"` 動態算出真實的 HMAC-SHA256 簽章並送出請求，以 100% 真實情境通過驗證。
 - **結果**：正式環境的程式碼達到了 100% Clean Code，且 64 個整合/單元測試依然順利通過。
 
-### Phase 15 — 流程優化與中文化體驗（`待提交`）
+### Phase 15 — 流程優化與中文化體驗（`e375d38`）
 
 **目標**：優化使用者體驗，讓機器人更貼近中文語境，並且增加進入選單的防呆機制。
 
@@ -245,6 +246,22 @@
   - 修改 `ITravelItemRepository` 新增 `GetDistinctCategoriesAsync()`，可利用 EF Core 的 `.Distinct()` 語法，效能極佳地撈出資料庫現有分類。
   - 將 `QueryService` 注入至 `ProcessMessageCommandHandler`。當使用者輸入 `查詢` 時，除了顯示提示訊息外，會動態列出目前擁有的類別，大幅提升 UX（解決了 FR-008 未知分類的痛點）。
 
+### Phase 16 — 修復 CRUD 流程無法退出選單（`64825ee`）
+
+**問題**：喚醒進入主選單、再選擇 儲存／查詢／編輯／刪除 後，使用者無法退出選單。
+
+- **原因分析**：
+  - 主選單進入各流程的提示文字寫「返回選單」，但 `BotCommandParser` 只認得「返回主選單」，照著提示輸入會被判定為 `Unknown`。
+  - 「再見小幫手」只在 `MainMenu` 狀態被處理，進入任何 Flow 後輸入皆無效。
+- **修正內容**：
+  - **全域指令攔截**：`ProcessMessageCommandHandler` 在非 `Idle` 狀態下，會先於分派至各 Flow 之前檢查：
+    - `再見小幫手`（`BotCommand.Sleep`）→ `Reset` 回到 `Idle`，回覆「已退出小幫手。」
+    - `返回主選單`（`BotCommand.Return`）→ `Reset` 清除 `CurrentItemId` / `PendingSave` / `PendingEdit` 後設為 `MainMenu`，並重新顯示喚醒提示。
+  - **喚醒提示共用**：抽出常數 `WakeUpNotice`，喚醒與返回主選單共用同一段訊息。
+  - **提示文字統一**：查詢／編輯／刪除的提示由「返回選單」改為「返回主選單」，與指令一致。
+- **測試**：`MessageHandlerTests` 中兩個 Return 測試原本斷言為 `Idle`（與測試名稱不符），改為斷言 `MainMenu`。65 個測試全數通過。
+- **後續**：各 FlowHandler 內的 `BotCommand.Return` 分支已被全域攔截，目前不會被執行，可視需要清除。
+
 ---
 
 ## ✅ SRS 需求實作進度
@@ -254,7 +271,7 @@
 | FR-001 | 啟動 Bot 與主選單歡迎訊息 | ✅ 已完成（主選單已支援指令提示與歡迎訊息） |
 | FR-002 | 指令選擇 | ✅ 已完成（支援 Save、Query、Edit、Delete 與 Return） |
 | FR-003 | 對話狀態管理 | ✅ 已完成（已支援進入各 Flow 的格式提示 AC-003-01） |
-| FR-004 | Return 指令 | ✅ 已完成（所有 Flow 皆支援返回） |
+| FR-004 | Return 指令 | ✅ 已完成（全域攔截「返回主選單」，任何 Flow 皆可回主選單並重新顯示喚醒提示） |
 | FR-005 | 解析 URL / Name / Category | ✅ 已完成（格式 `URL #Category Name`，BR-030） |
 | FR-006 | 儲存旅遊資訊 | ✅ 已完成 |
 | FR-007 | 使用者自訂分類 | ✅ 已完成（直接採用使用者輸入） |
@@ -279,7 +296,7 @@
 
 ## 🔜 下一步規劃
 
-1. **本機外網測試與 LINE 帳號連通**：將已完成的 Webhook API 透過 **ngrok** 暴露至外網，並於 LINE Developers Console 設定 Webhook URL，實際以 LINE 軟體測試所有互動流程。
+1. **本機外網測試與 LINE 帳號連通**：將已完成的 Webhook API 透過 **ngrok** 暴露至外網，並於 LINE Developers Console 設定 Webhook URL，實際以 LINE 軟體測試所有互動流程。(目前未設置ngrok, 以zeabur處理)
 2. **優化使用者體驗 (UX)**：考慮利用 LINE Flex Message 美化查詢結果，或加入「系統支援的分類」白名單（解決 FR-008 延伸問題），降低使用者輸入錯誤的機率。
 3. **完善例外處理**：加入 URL 格式驗證功能（改善 FR-010）與完整的錯誤訊息範例提示（改善 FR-012）。
 4. **自動化 CI/CD 部署**：建立 GitHub Actions CI（包含自動化單元測試與建置），並整合部署至 **Zeabur** 等雲端平台。

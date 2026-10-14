@@ -1,6 +1,5 @@
 using MediatR;
 using OkinawaBot.Application.Requests;
-using OkinawaBot.Application.Commands;
 using OkinawaBot.Application.Input;
 using OkinawaBot.Application.Models;
 using OkinawaBot.Application.Services;
@@ -12,20 +11,16 @@ public class SaveFlowHandler : IRequestHandler<SaveFlowCommand, BotResponse>
 {
     private readonly ConversationStateManager _stateManager;
 
-    private readonly BotCommandParser _commandParser;
-
     private readonly SaveInputParser _inputParser;
 
     private readonly SaveService _saveService;
 
     public SaveFlowHandler(
         ConversationStateManager stateManager,
-        BotCommandParser commandParser,
         SaveInputParser inputParser,
         SaveService saveService)
     {
         _stateManager = stateManager;
-        _commandParser = commandParser;
         _inputParser = inputParser;
         _saveService = saveService;
     }
@@ -48,19 +43,6 @@ public class SaveFlowHandler : IRequestHandler<SaveFlowCommand, BotResponse>
                 userId,
                 message,
                 context);
-        }
-
-        var command =
-            _commandParser.Parse(message);
-
-        if (command == BotCommand.Return)
-        {
-            _stateManager.Reset(userId);
-
-            return new BotResponse
-            {
-                Message = "已回到主選單。"
-            };
         }
 
         var parseResult =
@@ -120,20 +102,6 @@ public class SaveFlowHandler : IRequestHandler<SaveFlowCommand, BotResponse>
         string message,
         ConversationContext context)
     {
-        if (message.Equals(
-            "返回主選單",
-            StringComparison.OrdinalIgnoreCase))
-        {
-            context.PendingSave = null;
-
-            _stateManager.Reset(userId);
-
-            return new BotResponse
-            {
-                Message = "已取消儲存並回到主選單。"
-            };
-        }
-
         if (message.Equals(
             "繼續",
             StringComparison.OrdinalIgnoreCase))

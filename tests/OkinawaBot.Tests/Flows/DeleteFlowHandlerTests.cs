@@ -18,9 +18,6 @@ public class DeleteFlowHandlerTests
         var stateManager =
             new ConversationStateManager(new FakeDistributedCache());
 
-        var commandParser =
-            new BotCommandParser();
-
         var repository =
             new FakeTravelItemRepository();
 
@@ -30,7 +27,6 @@ public class DeleteFlowHandlerTests
         var handler =
             new DeleteFlowHandler(
                 stateManager,
-                commandParser,
                 deleteService);
 
         stateManager.SetState(
@@ -62,9 +58,6 @@ public class DeleteFlowHandlerTests
         var stateManager =
             new ConversationStateManager(new FakeDistributedCache());
 
-        var commandParser =
-            new BotCommandParser();
-
         var repository =
             new FakeTravelItemRepository();
 
@@ -82,7 +75,6 @@ public class DeleteFlowHandlerTests
         var handler =
             new DeleteFlowHandler(
                 stateManager,
-                commandParser,
                 deleteService);
 
         stateManager.SetState(
@@ -126,9 +118,6 @@ public class DeleteFlowHandlerTests
         var stateManager =
             new ConversationStateManager(new FakeDistributedCache());
 
-        var commandParser =
-            new BotCommandParser();
-
         var repository =
             new FakeTravelItemRepository();
 
@@ -146,7 +135,6 @@ public class DeleteFlowHandlerTests
         var handler =
             new DeleteFlowHandler(
                 stateManager,
-                commandParser,
                 deleteService);
 
         stateManager.SetState(
@@ -178,9 +166,6 @@ public class DeleteFlowHandlerTests
         var stateManager =
             new ConversationStateManager(new FakeDistributedCache());
 
-        var commandParser =
-            new BotCommandParser();
-
         var repository =
             new FakeTravelItemRepository();
 
@@ -198,7 +183,6 @@ public class DeleteFlowHandlerTests
         var handler =
             new DeleteFlowHandler(
                 stateManager,
-                commandParser,
                 deleteService);
 
         stateManager.SetState(
@@ -222,54 +206,6 @@ public class DeleteFlowHandlerTests
             response.Message);
     }
 
-    //confirmation => return
-    [Fact]
-    public async Task HandleAsync_WhenConfirmationReturns_ShouldCancelDelete()
-    {
-        // Arrange
-        var stateManager =
-            new ConversationStateManager(new FakeDistributedCache());
-
-        var commandParser =
-            new BotCommandParser();
-
-        var repository =
-            new FakeTravelItemRepository();
-
-        var deleteService =
-            new DeleteService(repository);
-
-        var handler =
-            new DeleteFlowHandler(
-                stateManager,
-                commandParser,
-                deleteService);
-
-        var context =
-            stateManager.GetOrCreate("test-user");
-
-        context.State =
-            ConversationState.DeleteConfirmation;
-
-        context.CurrentItemId = 1;
-
-        // Act
-        var response =
-            await handler.Handle(new OkinawaBot.Application.Requests.DeleteFlowCommand("test-user", "返回主選單"), CancellationToken.None);
-
-        // Assert
-        Assert.Equal(
-            ConversationState.Idle,
-            context.State);
-
-        Assert.Null(
-            context.CurrentItemId);
-
-        Assert.Contains(
-            "已回到主選單",
-            response.Message);
-    }
-
     //confirmation => continue
     [Fact]
     public async Task HandleAsync_WhenConfirmationContinues_ShouldDeleteItem()
@@ -277,9 +213,6 @@ public class DeleteFlowHandlerTests
         // Arrange
         var stateManager =
             new ConversationStateManager(new FakeDistributedCache());
-
-        var commandParser =
-            new BotCommandParser();
 
         var repository =
             new FakeTravelItemRepository();
@@ -298,7 +231,6 @@ public class DeleteFlowHandlerTests
         var handler =
             new DeleteFlowHandler(
                 stateManager,
-                commandParser,
                 deleteService);
 
         var context =
@@ -339,9 +271,6 @@ public class DeleteFlowHandlerTests
         var stateManager =
             new ConversationStateManager(new FakeDistributedCache());
 
-        var commandParser =
-            new BotCommandParser();
-
         var repository =
             new FakeTravelItemRepository();
 
@@ -359,7 +288,6 @@ public class DeleteFlowHandlerTests
         var handler =
             new DeleteFlowHandler(
                 stateManager,
-                commandParser,
                 deleteService);
 
         var context =

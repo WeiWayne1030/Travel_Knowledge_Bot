@@ -12,56 +12,6 @@ namespace OkinawaBot.Tests.Flows;
 
 public class SaveFlowHandlerTests
 {
-    [Fact]
-    public async Task HandleAsync_ShouldReturnToMainMenu_WhenUserEntersReturn()
-    {
-        // Arrange
-        var userId = "user-1";
-
-        var stateManager =
-            new ConversationStateManager(new FakeDistributedCache());
-
-        var commandParser =
-            new BotCommandParser();
-
-        var inputParser =
-            new SaveInputParser();
-
-        var repository =
-            new FakeTravelItemRepository();
-
-        var saveService =
-            new SaveService(repository);
-
-        var handler =
-            new SaveFlowHandler(
-                stateManager,
-                commandParser,
-                inputParser,
-                saveService);
-
-        stateManager.SetState(
-            userId,
-            ConversationState.SaveFlow);
-
-        // Act
-        var response =
-            await handler.Handle(new OkinawaBot.Application.Requests.SaveFlowCommand(userId, "返回主選單"), CancellationToken.None);
-
-        // Assert
-        var context =
-            stateManager.GetOrCreate(userId);
-
-        Assert.Equal(
-            ConversationState.Idle,
-            context.State);
-
-        Assert.Equal(
-            "已回到主選單。",
-            response.Message);
-    }
-
-
     //模擬儲存成功且回MAINMENU
     [Fact]
     public async Task HandleAsync_ShouldSaveItemAndReturnToMainMenu_WhenInputIsValid()
@@ -72,9 +22,6 @@ public class SaveFlowHandlerTests
         var stateManager =
             new ConversationStateManager(new FakeDistributedCache());
 
-        var commandParser =
-            new BotCommandParser();
-
         var inputParser =
             new SaveInputParser();
 
@@ -87,7 +34,6 @@ public class SaveFlowHandlerTests
         var handler =
             new SaveFlowHandler(
                 stateManager,
-                commandParser,
                 inputParser,
                 saveService);
 
@@ -130,9 +76,6 @@ public class SaveFlowHandlerTests
         var stateManager =
             new ConversationStateManager(new FakeDistributedCache());
 
-        var commandParser =
-            new BotCommandParser();
-
         var inputParser =
             new SaveInputParser();
 
@@ -145,7 +88,6 @@ public class SaveFlowHandlerTests
         var handler =
             new SaveFlowHandler(
                 stateManager,
-                commandParser,
                 inputParser,
                 saveService);
 
@@ -184,14 +126,12 @@ public class SaveFlowHandlerTests
         var userId = "user-1";
 
         var stateManager = new ConversationStateManager(new FakeDistributedCache());
-        var commandParser = new BotCommandParser();
         var inputParser = new SaveInputParser();
         var repository = new FakeTravelItemRepository();
         var saveService = new SaveService(repository);
 
         var handler = new SaveFlowHandler(
             stateManager,
-            commandParser,
             inputParser,
             saveService);
 
@@ -245,14 +185,12 @@ public class SaveFlowHandlerTests
         var userId = "user-1";
 
         var stateManager = new ConversationStateManager(new FakeDistributedCache());
-        var commandParser = new BotCommandParser();
         var inputParser = new SaveInputParser();
         var repository = new FakeTravelItemRepository();
         var saveService = new SaveService(repository);
 
         var handler = new SaveFlowHandler(
             stateManager,
-            commandParser,
             inputParser,
             saveService);
 
@@ -299,69 +237,4 @@ public class SaveFlowHandlerTests
             2,
             repository.Items.Count);
     }
-
-    //測不重複存取(return)
-    [Fact]
-    public async Task HandleAsync_ShouldCancelDuplicateSave_WhenUserEntersReturn()
-    {
-        // Arrange
-        var userId = "user-1";
-
-        var stateManager = new ConversationStateManager(new FakeDistributedCache());
-        var commandParser = new BotCommandParser();
-        var inputParser = new SaveInputParser();
-        var repository = new FakeTravelItemRepository();
-        var saveService = new SaveService(repository);
-
-        var handler = new SaveFlowHandler(
-            stateManager,
-            commandParser,
-            inputParser,
-            saveService);
-
-        stateManager.SetState(
-            userId,
-            ConversationState.SaveFlow);
-
-        var existingRequest =
-            new SaveTravelItemRequest
-            {
-                Url = "https://example.com/old",
-                Category = "Attraction",
-                Name = "美麗海水族館"
-            };
-
-        await saveService.SaveAsync(existingRequest);
-
-        var input =
-            """
-        https://example.com/new
-        #Attraction
-        美麗海水族館
-        """;
-
-        await handler.Handle(new OkinawaBot.Application.Requests.SaveFlowCommand(userId, input), CancellationToken.None);
-
-        // Act
-        var response =
-            await handler.Handle(new OkinawaBot.Application.Requests.SaveFlowCommand(userId, "返回主選單"), CancellationToken.None);
-
-        // Assert
-        var context =
-            stateManager.GetOrCreate(userId);
-
-        Assert.Equal(
-            ConversationState.Idle,
-            context.State);
-
-        Assert.Null(
-            context.PendingSave);
-
-        Assert.Equal(
-            "已取消儲存並回到主選單。",
-            response.Message);
-
-        Assert.Single(repository.Items);
-    }
-
 }

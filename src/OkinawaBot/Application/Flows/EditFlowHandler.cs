@@ -1,6 +1,5 @@
 using MediatR;
 using OkinawaBot.Application.Requests;
-using OkinawaBot.Application.Commands;
 using OkinawaBot.Application.Input;
 using OkinawaBot.Application.Models;
 using OkinawaBot.Application.Services;
@@ -12,18 +11,15 @@ namespace OkinawaBot.Application.Flows;
 public class EditFlowHandler : IRequestHandler<EditFlowCommand, BotResponse>
 {
     private readonly ConversationStateManager _stateManager;
-    private readonly BotCommandParser _commandParser;
     private readonly EditService _editService;
     private readonly SaveInputParser _inputParser;
 
     public EditFlowHandler(
         ConversationStateManager stateManager,
-        BotCommandParser commandParser,
         EditService editService,
         SaveInputParser inputParser)
     {
         _stateManager = stateManager;
-        _commandParser = commandParser;
         _editService = editService;
         _inputParser = inputParser;
     }
@@ -37,19 +33,6 @@ public class EditFlowHandler : IRequestHandler<EditFlowCommand, BotResponse>
 
         var context =
             _stateManager.GetOrCreate(userId);
-
-        var command =
-            _commandParser.Parse(message);
-
-        if (command == BotCommand.Return)
-        {
-            _stateManager.Reset(userId);
-
-            return new BotResponse
-            {
-                Message = "已回到主選單。"
-            };
-        }
 
         if (context.State ==
             ConversationState.EditItemSelection)
@@ -223,19 +206,6 @@ public class EditFlowHandler : IRequestHandler<EditFlowCommand, BotResponse>
         string message,
         ConversationContext context)
     {
-        var command =
-            _commandParser.Parse(message);
-
-        if (command == BotCommand.Return)
-        {
-            _stateManager.Reset(userId);
-
-            return new BotResponse
-            {
-                Message = "已取消修改，回到主選單。"
-            };
-        }
-
         if (!message.Trim()
             .Equals("繼續", StringComparison.OrdinalIgnoreCase))
         {

@@ -1,6 +1,5 @@
 using MediatR;
 using OkinawaBot.Application.Requests;
-using OkinawaBot.Application.Commands;
 using OkinawaBot.Application.Models;
 using OkinawaBot.Application.Services;
 using OkinawaBot.Application.State;
@@ -10,16 +9,13 @@ namespace OkinawaBot.Application.Flows;
 public class DeleteFlowHandler : IRequestHandler<DeleteFlowCommand, BotResponse>
 {
     private readonly ConversationStateManager _stateManager;
-    private readonly BotCommandParser _commandParser;
     private readonly DeleteService _deleteService;
 
     public DeleteFlowHandler(
         ConversationStateManager stateManager,
-        BotCommandParser commandParser,
         DeleteService deleteService)
     {
         _stateManager = stateManager;
-        _commandParser = commandParser;
         _deleteService = deleteService;
     }
 
@@ -32,19 +28,6 @@ public class DeleteFlowHandler : IRequestHandler<DeleteFlowCommand, BotResponse>
 
         var context =
             _stateManager.GetOrCreate(userId);
-
-        var command =
-            _commandParser.Parse(message);
-
-        if (command == BotCommand.Return)
-        {
-            _stateManager.Reset(userId);
-
-            return new BotResponse
-            {
-                Message = "已回到主選單。"
-            };
-        }
 
         if (context.State ==
             ConversationState.DeleteFlow)
@@ -125,19 +108,6 @@ public class DeleteFlowHandler : IRequestHandler<DeleteFlowCommand, BotResponse>
     string message,
     ConversationContext context)
     {
-        var command =
-            _commandParser.Parse(message);
-
-        if (command == BotCommand.Return)
-        {
-            _stateManager.Reset(userId);
-
-            return new BotResponse
-            {
-                Message = "已取消刪除。"
-            };
-        }
-
         if (!string.Equals(
                 message.Trim(),
                 "繼續",

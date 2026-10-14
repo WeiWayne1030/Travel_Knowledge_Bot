@@ -15,52 +15,6 @@ namespace OkinawaBot.Tests.Flows;
 
 public class QueryFlowHandlerTests
 {
-    //測試進入查詢模式後返回
-    [Fact]
-    public async Task HandleAsync_ShouldReturnToMainMenu_WhenUserEntersReturn()
-    {
-        // Arrange
-        var userId = "user-1";
-
-        var stateManager =
-            new ConversationStateManager(new FakeDistributedCache());
-
-        var commandParser =
-            new BotCommandParser();
-
-        var repository =
-            new FakeTravelItemRepository();
-
-        var queryService =
-            new QueryService(repository);
-
-        var handler =
-            new QueryFlowHandler(
-                stateManager,
-                commandParser,
-                queryService);
-
-        stateManager.SetState(
-            userId,
-            ConversationState.QueryFlow);
-
-        // Act
-        var response =
-            await handler.Handle(new OkinawaBot.Application.Requests.QueryFlowCommand(userId, "返回主選單"), CancellationToken.None);
-
-        // Assert
-        var context =
-            stateManager.GetOrCreate(userId);
-
-        Assert.Equal(
-            ConversationState.Idle,
-            context.State);
-
-        Assert.Equal(
-            "已回到主選單。",
-            response.Message);
-    }
-
     //測試無類別資料之結果
     [Fact]
     public async Task HandleAsync_ShouldStayInQueryFlow_WhenCategoryHasNoItems()
@@ -71,9 +25,6 @@ public class QueryFlowHandlerTests
         var stateManager =
             new ConversationStateManager(new FakeDistributedCache());
 
-        var commandParser =
-            new BotCommandParser();
-
         var repository =
             new FakeTravelItemRepository();
 
@@ -83,7 +34,6 @@ public class QueryFlowHandlerTests
         var handler =
             new QueryFlowHandler(
                 stateManager,
-                commandParser,
                 queryService);
 
         stateManager.SetState(
@@ -117,9 +67,6 @@ public class QueryFlowHandlerTests
         var stateManager =
             new ConversationStateManager(new FakeDistributedCache());
 
-        var commandParser =
-            new BotCommandParser();
-
         var repository =
             new FakeTravelItemRepository();
 
@@ -149,7 +96,6 @@ public class QueryFlowHandlerTests
         var handler =
             new QueryFlowHandler(
                 stateManager,
-                commandParser,
                 queryService);
 
         stateManager.SetState(
