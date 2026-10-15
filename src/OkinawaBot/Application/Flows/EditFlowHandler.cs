@@ -12,12 +12,12 @@ public class EditFlowHandler : IRequestHandler<EditFlowCommand, BotResponse>
 {
     private readonly ConversationStateManager _stateManager;
     private readonly EditService _editService;
-    private readonly SaveInputParser _inputParser;
+    private readonly EditInputParser _inputParser;
 
     public EditFlowHandler(
         ConversationStateManager stateManager,
         EditService editService,
-        SaveInputParser inputParser)
+        EditInputParser inputParser)
     {
         _stateManager = stateManager;
         _editService = editService;
@@ -121,10 +121,15 @@ public class EditFlowHandler : IRequestHandler<EditFlowCommand, BotResponse>
         {
             Message =
                 $"你選擇了「{selectedItem.Name}」。\n\n" +
-                "請輸入新的資料：\n" +
-                "URL\n" +
-                "#Category\n" +
-                "Name"
+                $"目前資料：\n" +
+                $"名稱：{selectedItem.Name}\n" +
+                $"類別：#{selectedItem.Category}\n" +
+                $"網址：{selectedItem.Url}\n\n" +
+                "請輸入要修改的內容（可任一修改或同時修改多項）：\n" +
+                "• 僅改網址：輸入新 URL（例如 https://...）\n" +
+                "• 僅改類別：輸入 #新類別（例如 #美食）\n" +
+                "• 僅改名稱：輸入新名稱（例如 美麗海水族館 或 名稱: 美麗海水族館）\n" +
+                "• 多項修改：URL #新類別 新名稱"
         };
     }
 
@@ -157,9 +162,9 @@ public class EditFlowHandler : IRequestHandler<EditFlowCommand, BotResponse>
 
         var request = new UpdateTravelItemRequest
         {
-            Url = parseResult.Url!,
-            Category = parseResult.Category!,
-            Name = parseResult.Name!
+            Url = parseResult.Url,
+            Category = parseResult.Category,
+            Name = parseResult.Name
         };
 
         var result =

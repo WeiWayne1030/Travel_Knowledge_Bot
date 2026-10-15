@@ -16,14 +16,14 @@ public class EditFlowHandlerTests
     private readonly FakeTravelItemRepository _repository;
     private readonly EditService _editService;
     private readonly EditFlowHandler _handler;
-    private readonly SaveInputParser _inputParser;
+    private readonly EditInputParser _inputParser;
 
     public EditFlowHandlerTests()
     {
         _stateManager = new ConversationStateManager(new FakeDistributedCache());
         _repository = new FakeTravelItemRepository();
         _editService = new EditService(_repository);
-        _inputParser = new SaveInputParser();
+        _inputParser = new EditInputParser();
 
         _handler = new EditFlowHandler(
             _stateManager,
@@ -202,18 +202,18 @@ public class EditFlowHandlerTests
         context.CurrentItemId =
             item.Id;
 
-        var result = await _handler.Handle(new OkinawaBot.Application.Requests.EditFlowCommand(userId, "輸入錯誤"), CancellationToken.None);
+        var result = await _handler.Handle(new OkinawaBot.Application.Requests.EditFlowCommand(userId, "#"), CancellationToken.None);
 
         Assert.Equal(
             ConversationState.EditDataInput,
             context.State);
 
         Assert.Contains(
-            "缺少分類",
+            "缺少分類名稱",
             result.Message);
     }
 
-    //正常修改流程
+    //正常修改流程（全部更新）
     [Fact]
     public async Task ValidData_ShouldUpdateItemAndReturnToMainMenu()
     {
@@ -264,6 +264,122 @@ public class EditFlowHandlerTests
         Assert.Equal(
             "旅遊資訊修改成功。",
             result.Message);
+    }
+
+    //僅更新 URL
+    [Fact]
+    public async Task OnlyUrl_ShouldUpdateOnlyUrlAndRetainOtherFields()
+    {
+        const string userId = "user-1";
+
+        var item = await _repository.CreateAsync(
+            new TravelItem
+            {
+                Name = "原始名稱",
+                Url = "https://old.example.com",
+                Category = "OriginalCat"
+            });
+
+        var context = _stateManager.GetOrCreate(userId);
+        context.State = ConversationState.EditDataInput;
+        context.CurrentItemId = item.Id;
+
+        var result = await _handler.Handle(new OkinawaBot.Application.Requests.EditFlowCommand(userId, "https://updated-only-url.com"), CancellationToken.None);
+
+        var updatedItem = await _repository.FindByIdAsync(item.Id);
+
+        Assert.Equal(ConversationState.Idle, context.State);
+        Assert.Equal("原始名稱", updatedItem!.Name);
+        Assert.Equal("OriginalCat", updatedItem.Category);
+        Assert.Equal("https://updated-only-url.com", updatedItem.Url);
+        Assert.Equal("旅遊資訊修改成功。", result.Message);
+    }
+
+    //僅更新 類別
+    [Fact]
+    public async Task OnlyCategory_ShouldUpdateOnlyCategoryAndRetainOtherFields()
+    {
+        const string userId = "user-1";
+
+        var item = await _repository.CreateAsync(
+            new TravelItem
+            {
+                Name = "原始名稱",
+                Url = "https://old.example.com",
+                Category = "OriginalCat"
+            });
+
+        var context = _stateManager.GetOrCreate(userId);
+        context.State = ConversationState.EditDataInput;
+        context.CurrentItemId = item.Id;
+
+        var result = await _handler.Handle(new OkinawaBot.Application.Requests.EditFlowCommand(userId, "#NewCategory"), CancellationToken.None);
+
+        var updatedItem = await _repository.FindByIdAsync(item.Id);
+
+        Assert.Equal(ConversationState.Idle, context.State);
+        Assert.Equal("原始名稱", updatedItem!.Name);
+        Assert.Equal("NewCategory", updatedItem.Category);
+        Assert.Equal("https://old.example.com", updatedItem.Url);
+        Assert.Equal("旅遊資訊修改成功。", result.Message);
+    }
+
+    //僅更新 名稱
+    [Fact]
+    public async Task OnlyName_ShouldUpdateOnlyNameAndRetainOtherFields()
+    {
+        const string userId = "user-1";
+
+        var item = await _repository.CreateAsync(
+            new TravelItem
+            {
+                Name = "原始名稱",
+                Url = "https://old.example.com",
+                Category = "OriginalCat"
+            });
+
+        var context = _stateManager.GetOrCreate(userId);
+        context.State = ConversationState.EditDataInput;
+        context.CurrentItemId = item.Id;
+
+        var result = await _handler.Handle(new OkinawaBot.Application.Requests.EditFlowCommand(userId, "新修改的店名"), CancellationToken.None);
+
+        var updatedItem = await _repository.FindByIdAsync(item.Id);
+
+        Assert.Equal(ConversationState.Idle, context.State);
+        Assert.Equal("新修改的店名", updatedItem!.Name);
+        Assert.Equal("OriginalCat", updatedItem.Category);
+        Assert.Equal("https://old.example.com", updatedItem.Url);
+        Assert.Equal("旅遊資訊修改成功。", result.Message);
+    }
+
+    //更新 URL 與 類別 (不更新名稱)
+    [Fact]
+    public async Task UrlAndCategory_ShouldUpdateBothAndRetainName()
+    {
+        const string userId = "user-1";
+
+        var item = await _repository.CreateAsync(
+            new TravelItem
+            {
+                Name = "保留不變的店名",
+                Url = "https://old.example.com",
+                Category = "OldCat"
+            });
+
+        var context = _stateManager.GetOrCreate(userId);
+        context.State = ConversationState.EditDataInput;
+        context.CurrentItemId = item.Id;
+
+        var result = await _handler.Handle(new OkinawaBot.Application.Requests.EditFlowCommand(userId, "https://new-url.example.com #Food"), CancellationToken.None);
+
+        var updatedItem = await _repository.FindByIdAsync(item.Id);
+
+        Assert.Equal(ConversationState.Idle, context.State);
+        Assert.Equal("保留不變的店名", updatedItem!.Name);
+        Assert.Equal("Food", updatedItem.Category);
+        Assert.Equal("https://new-url.example.com", updatedItem.Url);
+        Assert.Equal("旅遊資訊修改成功。", result.Message);
     }
 
     //測試重複資訊

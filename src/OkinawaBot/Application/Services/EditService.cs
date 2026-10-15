@@ -1,4 +1,4 @@
-﻿using OkinawaBot.Application.Models;
+using OkinawaBot.Application.Models;
 using OkinawaBot.Domain.Entities;
 using OkinawaBot.Domain.Interfaces;
 
@@ -27,7 +27,9 @@ public class EditService
             return EditResult.NotFound();
         }
 
-        if (!skipDuplicateCheck)
+        if (!skipDuplicateCheck &&
+            !string.IsNullOrWhiteSpace(request.Name) &&
+            !string.Equals(request.Name, item.Name, StringComparison.OrdinalIgnoreCase))
         {
             var existingItem =
                 await _repository.FindByNameAsync(
@@ -40,9 +42,20 @@ public class EditService
             }
         }
 
-        item.Url = request.Url;
-        item.Category = request.Category;
-        item.Name = request.Name;
+        if (!string.IsNullOrWhiteSpace(request.Url))
+        {
+            item.Url = request.Url;
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.Category))
+        {
+            item.Category = request.Category;
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.Name))
+        {
+            item.Name = request.Name;
+        }
 
         await _repository.UpdateAsync(item);
 

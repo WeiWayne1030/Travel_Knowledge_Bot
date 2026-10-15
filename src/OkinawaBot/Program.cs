@@ -42,6 +42,7 @@ builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Progr
 //Application Utilities
 builder.Services.AddScoped<BotCommandParser>();
 builder.Services.AddScoped<SaveInputParser>();
+builder.Services.AddScoped<EditInputParser>();
 
 // 使用 Redis 做 Distributed Cache
 builder.Services.AddStackExchangeRedisCache(options =>

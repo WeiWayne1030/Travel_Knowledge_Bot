@@ -1,4 +1,4 @@
-﻿using OkinawaBot.Application.Models;
+using OkinawaBot.Application.Models;
 using OkinawaBot.Application.Services;
 using OkinawaBot.Tests.Fakes;
 using System;
@@ -221,4 +221,64 @@ public class EditServiceTests
             "古宇里島",
             item.Name);
     }
+
+    // 測試僅更新部分欄位，其他欄位維持原樣
+    [Fact]
+    public async Task UpdateAsync_ShouldOnlyUpdateProvidedFields_WhenPartialFieldsGiven()
+    {
+        // Arrange
+        var repository = new FakeTravelItemRepository();
+        var item = await repository.CreateAsync(new Domain.Entities.TravelItem
+        {
+            Name = "原始景點",
+            Url = "https://example.com/original",
+            Category = "OriginalCat"
+        });
+
+        var service = new EditService(repository);
+        var request = new UpdateTravelItemRequest
+        {
+            Url = "https://example.com/only-url"
+        };
+
+        // Act
+        var result = await service.UpdateAsync(item.Id, request);
+
+        // Assert
+        Assert.Equal(EditResultStatus.Success, result.Status);
+        var updated = await repository.FindByIdAsync(item.Id);
+        Assert.Equal("https://example.com/only-url", updated!.Url);
+        Assert.Equal("原始景點", updated.Name);
+        Assert.Equal("OriginalCat", updated.Category);
+    }
+
+    // 測試不修改名稱時，即使資料庫有同名項目也不會誤報重複
+    [Fact]
+    public async Task UpdateAsync_ShouldNotTriggerDuplicateCheck_WhenNameIsNotChanged()
+    {
+        // Arrange
+        var repository = new FakeTravelItemRepository();
+        var item1 = await repository.CreateAsync(new Domain.Entities.TravelItem
+        {
+            Name = "美麗海水族館",
+            Url = "https://example.com/1",
+            Category = "Attraction"
+        });
+
+        var service = new EditService(repository);
+        var request = new UpdateTravelItemRequest
+        {
+            Category = "NewCategory"
+        };
+
+        // Act
+        var result = await service.UpdateAsync(item1.Id, request);
+
+        // Assert
+        Assert.Equal(EditResultStatus.Success, result.Status);
+        var updated = await repository.FindByIdAsync(item1.Id);
+        Assert.Equal("NewCategory", updated!.Category);
+        Assert.Equal("美麗海水族館", updated.Name);
+    }
 }
+
