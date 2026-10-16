@@ -316,4 +316,41 @@ public class DeleteFlowHandlerTests
             "繼續 或 返回主選單",
             response.Message);
     }
+
+    // 驗證刪除時僅能選取當前地區的項目
+    [Fact]
+    public async Task DeleteFlow_ShouldOnlyShowItemsFromCurrentDestination()
+    {
+        var stateManager = new ConversationStateManager(new FakeDistributedCache());
+        var repository = new FakeTravelItemRepository();
+
+        await repository.CreateAsync(new TravelItem
+        {
+            Destination = "首爾",
+            Name = "景福宮",
+            Url = "https://example.com/seoul",
+            Category = "Attraction"
+        });
+
+        await repository.CreateAsync(new TravelItem
+        {
+            Destination = "沖繩",
+            Name = "美麗海水族館",
+            Url = "https://example.com/okinawa",
+            Category = "Attraction"
+        });
+
+        var deleteService = new DeleteService(repository);
+        var handler = new DeleteFlowHandler(stateManager, deleteService);
+
+        var context = stateManager.GetOrCreate("test-dest-delete");
+        context.CurrentDestination = "首爾";
+        context.State = ConversationState.DeleteFlow;
+
+        // 在首爾只有 1 筆
+        var response = await handler.Handle(new OkinawaBot.Application.Requests.DeleteFlowCommand("test-dest-delete", "1"), CancellationToken.None);
+
+        Assert.Equal(ConversationState.DeleteConfirmation, context.State);
+        Assert.Contains("景福宮", response.Message);
+    }
 }

@@ -59,7 +59,7 @@ public class DeleteFlowHandler : IRequestHandler<DeleteFlowCommand, BotResponse>
     ConversationContext context)
     {
         var items =
-            await _deleteService.GetDeletableItemsAsync();
+            await _deleteService.GetDeletableItemsAsync(context.CurrentDestination);
 
         if (items.Count == 0)
         {

@@ -1,4 +1,4 @@
-﻿using OkinawaBot.Domain.Entities;
+using OkinawaBot.Domain.Entities;
 using OkinawaBot.Domain.Interfaces;
 
 namespace OkinawaBot.Application.Services;
@@ -34,8 +34,8 @@ public class DeleteService
     }
 
     public async Task<IReadOnlyList<TravelItem>>
-        GetDeletableItemsAsync()
+        GetDeletableItemsAsync(string? destination = null)
     {
-        return await _repository.GetAllAsync();
+        return await _repository.GetAllAsync(destination);
     }
 }

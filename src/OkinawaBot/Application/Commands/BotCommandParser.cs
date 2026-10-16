@@ -12,6 +12,7 @@ public class BotCommandParser
             "刪除" => BotCommand.Delete,
             "返回主選單" => BotCommand.Return,
             "再見小幫手" => BotCommand.Sleep,
+            "切換地區" or "切換目的地" => BotCommand.SwitchDestination,
             _ => BotCommand.Unknown
         };
     }

@@ -10,6 +10,8 @@ public class ConversationContext
     public ConversationState State { get; set; }
         = ConversationState.Idle;
 
+    public string CurrentDestination { get; set; } = "沖繩";
+
     public int? CurrentItemId { get; set; }
 
     public SaveTravelItemRequest? PendingSave { get; set; }

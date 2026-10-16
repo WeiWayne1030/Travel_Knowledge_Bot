@@ -1,8 +1,10 @@
-﻿namespace OkinawaBot.Domain.Entities;
+namespace OkinawaBot.Domain.Entities;
 
 public class TravelItem
 {
     public int Id { get; set; }
+
+    public string Destination { get; set; } = "沖繩";
 
     public string Name { get; set; } = string.Empty;
 

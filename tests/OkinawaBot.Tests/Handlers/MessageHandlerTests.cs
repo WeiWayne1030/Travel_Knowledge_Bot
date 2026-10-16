@@ -222,6 +222,7 @@ public class MessageHandlerTests
     [InlineData(ConversationState.EditDuplicateConfirmation)]
     [InlineData(ConversationState.DeleteFlow)]
     [InlineData(ConversationState.DeleteConfirmation)]
+    [InlineData(ConversationState.SwitchDestination)]
     public async Task HandleAsync_ReturnFromAnyFlow_ShouldResetAndGoToMainMenu(ConversationState state)
     {
         const string userId = "user-return";
@@ -247,5 +248,50 @@ public class MessageHandlerTests
         Assert.Null(context.PendingEdit);
         Assert.Contains("旅遊小幫手", response.Message);
         Assert.Empty(_repository.Items);
+    }
+
+    // 驗證輸入「切換地區」會進入 SwitchDestination 狀態
+    [Fact]
+    public async Task HandleAsync_WhenSwitchDestinationCommand_ShouldEnterSwitchDestinationState()
+    {
+        const string userId = "user-switch";
+        await HandleAsync(userId, "旅遊小幫手");
+        var response = await HandleAsync(userId, "切換地區");
+
+        var context = _stateManager.GetOrCreate(userId);
+        Assert.Equal(ConversationState.SwitchDestination, context.State);
+        Assert.Contains("目前選定地區為【沖繩】", response.Message);
+    }
+
+    // 驗證輸入新地區名稱時能成功切換地區並回到主選單
+    [Fact]
+    public async Task HandleAsync_WhenInSwitchDestinationState_ShouldChangeCurrentDestination()
+    {
+        const string userId = "user-switch-tokyo";
+        await HandleAsync(userId, "旅遊小幫手");
+        await HandleAsync(userId, "切換地區");
+        var response = await HandleAsync(userId, "東京");
+
+        var context = _stateManager.GetOrCreate(userId);
+        Assert.Equal(ConversationState.MainMenu, context.State);
+        Assert.Equal("東京", context.CurrentDestination);
+        Assert.Contains("已切換目前地區為【東京】", response.Message);
+    }
+
+    // 驗證切換地區後儲存的項目歸屬於該地區
+    [Fact]
+    public async Task HandleAsync_SaveItem_ShouldSaveUnderCurrentDestination()
+    {
+        const string userId = "user-dest-save";
+        await HandleAsync(userId, "旅遊小幫手");
+        await HandleAsync(userId, "切換地區");
+        await HandleAsync(userId, "京都");
+
+        await HandleAsync(userId, "儲存");
+        await HandleAsync(userId, "https://kyoto.example.com #Attraction 金閣寺");
+
+        var savedItem = Assert.Single(_repository.Items);
+        Assert.Equal("京都", savedItem.Destination);
+        Assert.Equal("金閣寺", savedItem.Name);
     }
 }

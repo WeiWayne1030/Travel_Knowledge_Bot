@@ -498,4 +498,37 @@ public class EditFlowHandlerTests
             "旅遊資訊修改成功。",
             result.Message);
     }
+
+    // 驗證編輯時僅能選取當前地區的項目
+    [Fact]
+    public async Task EditFlow_ShouldOnlyShowItemsFromCurrentDestination()
+    {
+        const string userId = "user-dest-edit";
+
+        await _repository.CreateAsync(new TravelItem
+        {
+            Destination = "東京",
+            Name = "東京鐵塔",
+            Url = "https://example.com/tokyo",
+            Category = "Attraction"
+        });
+
+        await _repository.CreateAsync(new TravelItem
+        {
+            Destination = "沖繩",
+            Name = "美麗海水族館",
+            Url = "https://example.com/okinawa",
+            Category = "Attraction"
+        });
+
+        var context = _stateManager.GetOrCreate(userId);
+        context.CurrentDestination = "東京";
+        context.State = ConversationState.EditItemSelection;
+
+        // 在東京只有 1 筆項目
+        var result = await _handler.Handle(new OkinawaBot.Application.Requests.EditFlowCommand(userId, "1"), CancellationToken.None);
+
+        Assert.Equal(ConversationState.EditDataInput, context.State);
+        Assert.Contains("東京鐵塔", result.Message);
+    }
 }

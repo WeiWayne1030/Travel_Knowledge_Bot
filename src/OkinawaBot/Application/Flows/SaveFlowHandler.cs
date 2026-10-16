@@ -59,6 +59,7 @@ public class SaveFlowHandler : IRequestHandler<SaveFlowCommand, BotResponse>
         var saveRequest =
             new SaveTravelItemRequest
             {
+                Destination = context.CurrentDestination,
                 Url = parseResult.Url!,
                 Category = parseResult.Category!,
                 Name = parseResult.Name!

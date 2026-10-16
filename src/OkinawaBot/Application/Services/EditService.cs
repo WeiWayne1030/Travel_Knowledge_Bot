@@ -33,13 +33,18 @@ public class EditService
         {
             var existingItem =
                 await _repository.FindByNameAsync(
-                    request.Name);
+                    request.Name, item.Destination);
 
             if (existingItem is not null &&
                 existingItem.Id != itemId)
             {
                 return EditResult.Duplicate();
             }
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.Destination))
+        {
+            item.Destination = request.Destination;
         }
 
         if (!string.IsNullOrWhiteSpace(request.Url))
@@ -63,8 +68,8 @@ public class EditService
     }
 
     public async Task<IReadOnlyList<TravelItem>>
-    GetEditableItemsAsync()
+    GetEditableItemsAsync(string? destination = null)
     {
-        return await _repository.GetAllAsync();
+        return await _repository.GetAllAsync(destination);
     }
 }

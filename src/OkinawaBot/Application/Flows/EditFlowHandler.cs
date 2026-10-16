@@ -74,7 +74,7 @@ public class EditFlowHandler : IRequestHandler<EditFlowCommand, BotResponse>
             ConversationContext context)
     {
         var items =
-            await _editService.GetEditableItemsAsync();
+            await _editService.GetEditableItemsAsync(context.CurrentDestination);
 
         if (items.Count == 0)
         {

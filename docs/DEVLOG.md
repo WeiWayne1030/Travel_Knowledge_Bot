@@ -28,6 +28,7 @@
 | 15 | 2026-10-08 | `e375d38` | 流程優化與中文化體驗 | 新增喚醒/休眠機制（旅遊小幫手/再見小幫手）。全面將指令中文化（儲存、查詢、編輯、刪除、繼續、返回主選單）。強化 Query 功能動態拉取資料庫現有分類提示使用者。 |
 | 16 | 2026-10-14 | `64825ee` | 修復 CRUD 流程無法退出選單 | 「再見小幫手」/「返回主選單」改為全域攔截；返回主選單會重置暫存並重新顯示喚醒提示；統一提示文字為「返回主選單」。 |
 | 17 | 2026-10-14 | — | 編輯流程彈性化重構 (任一欄位修改) | 實作 `EditInputParser` 與 `EditInputParseResult`，支援 URL、類別、名稱單一或多項自由修改；`UpdateTravelItemRequest` 改為 Nullable；`EditService` 支援局部更新並優化重複名稱檢查。 |
+| 18 | 2026-10-16 | — | 多目的地分區支援 (切換地區/國家) | TravelItem 增加 Destination 欄位並配置預設值與索引；ITravelItemRepository / Services 支援地區篩選；新增 SwitchDestination 狀態與「切換地區」指令。 |
 ---
 
 ## 📌 各階段詳細紀錄
@@ -295,6 +296,32 @@
     - 在 `Program.cs` 註冊 `EditInputParser`。
     - 新增 `EditInputParserTests` 驗證全欄位、單欄位（URL、類別、名稱）、雙欄位組合、標籤前綴與格式錯誤處理。
     - 更新 `EditServiceTests` 與 `EditFlowHandlerTests` 加入單一欄位更新與不變更名稱時跳過重複檢查的測試。
+
+### Phase 18 — 多目的地分區支援（切換地區/國家）（2026-10-16）
+
+**目標**：在同一資料庫內支援不同國家或地區（例如：沖繩、東京、首爾、曼谷）的資料隔離，避免使用者前往不同旅遊地點時需建立新資料庫的困擾。
+
+- **問題背景**：
+  - 原先 `TravelItem` 實體與資料庫未記錄目的地資訊，預設全屬於沖繩。若日後儲存其他國家的景點與美食，在查詢分類時會將不同國家的項目混淆在一起。
+- **重構與設計決策**：
+  - **實體與資料庫層 (`TravelItem` & `AppDbContext`)**：
+    - `TravelItem` 增加 `Destination` 欄位，預設值為 `"沖繩"`（既有舊資料自動相容為沖繩）。
+    - 建立 EF Core Migration (`AddDestinationToTravelItem`)，針對 `(Destination, Category)` 與 `(Destination, Name)` 建立複合索引以加速查詢。
+  - **資料存取層 (`ITravelItemRepository` & `TravelItemRepository`)**：
+    - 各項查詢方法（`FindByNameAsync`、`FindByCategoryAsync`、`GetAllAsync`、`GetDistinctCategoriesAsync`）支援 `destination` 參數篩選。
+    - 新增 `GetDistinctDestinationsAsync()` 查詢目前資料庫已存在的所有地區清單。
+    - 命名重複性檢查改為依地區隔離（例如沖繩與東京可各自存在同名之「一蘭拉麵」）。
+  - **對話狀態層 (`ConversationContext` & `ConversationState`)**：
+    - `ConversationContext` 新增 `CurrentDestination` 屬性（預設為 `"沖繩"`），工作階段中保持記住使用者的選擇，直到主動切換。
+    - 新增 `ConversationState.SwitchDestination` 狀態。
+  - **流程與使用者體驗 (`ProcessMessageCommandHandler` & 各 FlowHandler)**：
+    - 新增指令「`切換地區`」（亦支援「`切換目的地`」），可列出已儲存地區供號碼選擇，或直接打字輸入新地區名稱。
+    - 主選單與喚醒提示明確標註目前地區（例：`目前地區：【沖繩】 📍`）。
+    - 儲存時自動帶入當前地區，使用者每次貼網址時無須手打地區名稱。
+    - 查詢、編輯、刪除自動限定於當前地區範圍，避免跨地區資料干擾。
+  - **測試覆蓋**：
+    - 更新 `FakeTravelItemRepository` 支援目的地篩選。
+    - 於 `MessageHandlerTests`、`QueryServiceTests`、`EditFlowHandlerTests`、`DeleteFlowHandlerTests` 新增地區切換、依地區儲存/查詢/編輯/刪除之單元測試。
 
 ---
 

@@ -14,7 +14,7 @@ public class QueryService
     }
 
     public async Task<IReadOnlyList<TravelItem>>
-        QueryByCategoryAsync(string category)
+        QueryByCategoryAsync(string category, string? destination = null)
     {
         if (string.IsNullOrWhiteSpace(category))
         {
@@ -22,11 +22,16 @@ public class QueryService
         }
 
         return await _repository.FindByCategoryAsync(
-            category);
+            category, destination);
     }
 
-    public async Task<IReadOnlyList<string>> GetAvailableCategoriesAsync()
+    public async Task<IReadOnlyList<string>> GetAvailableCategoriesAsync(string? destination = null)
     {
-        return await _repository.GetDistinctCategoriesAsync();
+        return await _repository.GetDistinctCategoriesAsync(destination);
+    }
+
+    public async Task<IReadOnlyList<string>> GetAvailableDestinationsAsync()
+    {
+        return await _repository.GetDistinctDestinationsAsync();
     }
 }

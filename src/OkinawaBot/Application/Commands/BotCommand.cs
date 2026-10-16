@@ -8,5 +8,6 @@ public enum BotCommand
     Delete,
     Return,
     Sleep,
+    SwitchDestination,
     Unknown
 }

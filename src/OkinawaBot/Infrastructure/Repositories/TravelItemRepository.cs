@@ -21,18 +21,30 @@ public class TravelItemRepository : ITravelItemRepository
     }
 
     public async Task<TravelItem?> FindByNameAsync(
-        string name)
+        string name, string? destination = null)
     {
-        return await _db.TravelItems
+        var query = _db.TravelItems.AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(destination))
+        {
+            query = query.Where(x => x.Destination == destination);
+        }
+
+        return await query
             .FirstOrDefaultAsync(x => x.Name == name);
     }
 
     public async Task<IReadOnlyList<TravelItem>>
-        FindByCategoryAsync(string category)
+        FindByCategoryAsync(string category, string? destination = null)
     {
-        return await _db.TravelItems
-            .Where(x => x.Category == category)
-            .ToListAsync();
+        var query = _db.TravelItems.Where(x => x.Category == category);
+
+        if (!string.IsNullOrWhiteSpace(destination))
+        {
+            query = query.Where(x => x.Destination == destination);
+        }
+
+        return await query.ToListAsync();
     }
 
     public async Task<TravelItem> CreateAsync(
@@ -61,19 +73,43 @@ public class TravelItemRepository : ITravelItemRepository
         await _db.SaveChangesAsync();
     }
 
-    public async Task<IReadOnlyList<TravelItem>> GetAllAsync()
+    public async Task<IReadOnlyList<TravelItem>> GetAllAsync(string? destination = null)
     {
-        return await _db.TravelItems
+        var query = _db.TravelItems.AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(destination))
+        {
+            query = query.Where(x => x.Destination == destination);
+        }
+
+        return await query
             .OrderBy(x => x.Id)
             .ToListAsync();
     }
 
-    public async Task<IReadOnlyList<string>> GetDistinctCategoriesAsync()
+    public async Task<IReadOnlyList<string>> GetDistinctCategoriesAsync(string? destination = null)
     {
-        return await _db.TravelItems
+        var query = _db.TravelItems.AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(destination))
+        {
+            query = query.Where(x => x.Destination == destination);
+        }
+
+        return await query
             .Select(x => x.Category)
             .Distinct()
             .OrderBy(c => c)
+            .ToListAsync();
+    }
+
+    public async Task<IReadOnlyList<string>> GetDistinctDestinationsAsync()
+    {
+        return await _db.TravelItems
+            .Select(x => x.Destination)
+            .Where(d => !string.IsNullOrWhiteSpace(d))
+            .Distinct()
+            .OrderBy(d => d)
             .ToListAsync();
     }
 }

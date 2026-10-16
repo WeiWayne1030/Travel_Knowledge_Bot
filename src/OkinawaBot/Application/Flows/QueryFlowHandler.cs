@@ -37,16 +37,19 @@ public class QueryFlowHandler : IRequestHandler<QueryFlowCommand, BotResponse>
             };
         }
 
+        var context =
+            _stateManager.GetOrCreate(userId);
+
         var items =
             await _queryService.QueryByCategoryAsync(
-                category);
+                category, context.CurrentDestination);
 
         if (items.Count == 0)
         {
             return new BotResponse
             {
                 Message =
-                    $"找不到類別「{category}」的資料，請重新輸入。"
+                    $"在【{context.CurrentDestination}】找不到類別「{category}」的資料，請重新輸入。"
             };
         }
 
@@ -54,7 +57,7 @@ public class QueryFlowHandler : IRequestHandler<QueryFlowCommand, BotResponse>
             new StringBuilder();
 
         response.AppendLine(
-            $"【{category}】");
+            $"📍【{context.CurrentDestination}】 【{category}】");
 
         for (var i = 0; i < items.Count; i++)
         {

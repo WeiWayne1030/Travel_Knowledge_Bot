@@ -47,7 +47,7 @@ public class SaveService
         if (!skipDuplicateCheck)
         {
             var existingItem =
-                await _repository.FindByNameAsync(request.Name);
+                await _repository.FindByNameAsync(request.Name, request.Destination);
 
             if (existingItem != null)
             {
@@ -61,6 +61,7 @@ public class SaveService
 
         var item = new TravelItem
         {
+            Destination = string.IsNullOrWhiteSpace(request.Destination) ? "沖繩" : request.Destination,
             Name = request.Name,
             Url = request.Url,
             Category = request.Category,
