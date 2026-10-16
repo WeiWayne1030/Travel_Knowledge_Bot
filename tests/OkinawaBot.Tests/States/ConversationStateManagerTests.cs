@@ -94,5 +94,43 @@ public class ConversationStateManagerTests
             ConversationState.QueryFlow,
             userB.State);
     }
+
+    [Fact]
+    public void IsFlowExpired_ShouldReturnFalse_WhenStateIsIdle()
+    {
+        var manager = new ConversationStateManager(new FakeDistributedCache());
+        var context = manager.GetOrCreate("user-001");
+        context.LastActiveAt = DateTime.UtcNow.AddHours(-2);
+
+        var isExpired = manager.IsFlowExpired(context);
+
+        Assert.False(isExpired);
+    }
+
+    [Fact]
+    public void IsFlowExpired_ShouldReturnFalse_WhenWithinTimeout()
+    {
+        var manager = new ConversationStateManager(new FakeDistributedCache());
+        manager.SetState("user-001", ConversationState.SaveFlow);
+        var context = manager.GetOrCreate("user-001");
+        context.LastActiveAt = DateTime.UtcNow.AddMinutes(-30);
+
+        var isExpired = manager.IsFlowExpired(context);
+
+        Assert.False(isExpired);
+    }
+
+    [Fact]
+    public void IsFlowExpired_ShouldReturnTrue_WhenTimeoutExceeded()
+    {
+        var manager = new ConversationStateManager(new FakeDistributedCache());
+        manager.SetState("user-001", ConversationState.SaveFlow);
+        var context = manager.GetOrCreate("user-001");
+        context.LastActiveAt = DateTime.UtcNow.AddHours(-2);
+
+        var isExpired = manager.IsFlowExpired(context);
+
+        Assert.True(isExpired);
+    }
 }
 

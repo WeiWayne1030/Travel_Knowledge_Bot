@@ -4,6 +4,7 @@ using OkinawaBot.Application.Commands;
 using OkinawaBot.Application.Flows;
 using OkinawaBot.Application.Handlers;
 using OkinawaBot.Application.Input;
+using OkinawaBot.Application.Models;
 using OkinawaBot.Application.Requests;
 using OkinawaBot.Application.Services;
 using OkinawaBot.Application.State;
@@ -32,6 +33,7 @@ public class MessageHandlerTests
         services.AddSingleton<ITravelItemRepository>(_repository);
         services.AddScoped<BotCommandParser>();
         services.AddScoped<SaveInputParser>();
+        services.AddScoped<EditInputParser>();
         services.AddScoped<SaveService>();
         services.AddScoped<QueryService>();
         services.AddScoped<EditService>();
@@ -52,7 +54,7 @@ public class MessageHandlerTests
             provider.GetRequiredService<QueryService>());
     }
 
-    private Task HandleAsync(string userId, string message)
+    private Task<BotResponse> HandleAsync(string userId, string message)
     {
         return _handler.Handle(new ProcessMessageCommand(userId, message), CancellationToken.None);
     }
@@ -293,5 +295,53 @@ public class MessageHandlerTests
         var savedItem = Assert.Single(_repository.Items);
         Assert.Equal("京都", savedItem.Destination);
         Assert.Equal("金閣寺", savedItem.Name);
+    }
+
+    // 驗證流程逾時後傳送一般文字時，會自動重置為 Idle 並提示逾時訊息
+    [Fact]
+    public async Task HandleAsync_WhenFlowTimesOut_ShouldResetToIdleAndReturnTimeoutMessage()
+    {
+        const string userId = "user-timeout-test";
+        await HandleAsync(userId, "旅遊小幫手");
+        await HandleAsync(userId, "儲存");
+
+        var context = _stateManager.GetOrCreate(userId);
+        Assert.Equal(ConversationState.SaveFlow, context.State);
+
+        // 模擬逾時 2 小時
+        context.LastActiveAt = DateTime.UtcNow.AddHours(-2);
+        await _stateManager.SaveCurrentAsync();
+
+        var response = await HandleAsync(userId, "拉麵");
+
+        Assert.Equal("先前的操作已逾時並已重置，請輸入「旅遊小幫手」開始。", response.Message);
+        var resetContext = _stateManager.GetOrCreate(userId);
+        Assert.Equal(ConversationState.Idle, resetContext.State);
+    }
+
+    // 驗證流程逾時後輸入「旅遊小幫手」能直接重新喚醒，且保留原先的地區設定
+    [Fact]
+    public async Task HandleAsync_WhenFlowTimesOut_AndUserSendsWakeUp_ShouldWakeUpDirectly()
+    {
+        const string userId = "user-timeout-wakeup";
+        await HandleAsync(userId, "旅遊小幫手");
+        await HandleAsync(userId, "切換地區");
+        await HandleAsync(userId, "福岡");
+        await HandleAsync(userId, "儲存");
+
+        var context = _stateManager.GetOrCreate(userId);
+        Assert.Equal(ConversationState.SaveFlow, context.State);
+        Assert.Equal("福岡", context.CurrentDestination);
+
+        // 模擬逾時 2 小時
+        context.LastActiveAt = DateTime.UtcNow.AddHours(-2);
+        await _stateManager.SaveCurrentAsync();
+
+        var response = await HandleAsync(userId, "旅遊小幫手");
+
+        Assert.Contains("目前地區：【福岡】", response.Message);
+        var resetContext = _stateManager.GetOrCreate(userId);
+        Assert.Equal(ConversationState.MainMenu, resetContext.State);
+        Assert.Equal("福岡", resetContext.CurrentDestination);
     }
 }

@@ -17,4 +17,6 @@ public class ConversationContext
     public SaveTravelItemRequest? PendingSave { get; set; }
 
     public UpdateTravelItemRequest? PendingEdit { get; set; }
+
+    public DateTime? LastActiveAt { get; set; } = DateTime.UtcNow;
 }

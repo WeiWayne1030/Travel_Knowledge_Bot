@@ -8,6 +8,8 @@ public class ConversationStateManager
     private readonly IDistributedCache _cache;
     private ConversationContext? _currentContext;
 
+    public TimeSpan FlowTimeout { get; set; } = TimeSpan.FromHours(1);
+
     public ConversationStateManager(IDistributedCache cache)
     {
         _cache = cache;
@@ -35,20 +37,39 @@ public class ConversationStateManager
             _currentContext = new ConversationContext
             {
                 UserId = userId,
-                State = ConversationState.Idle
+                State = ConversationState.Idle,
+                LastActiveAt = DateTime.UtcNow
             };
         }
 
         return _currentContext;
     }
 
+    public bool IsFlowExpired(ConversationContext context, DateTime? now = null)
+    {
+        if (context.State == ConversationState.Idle)
+        {
+            return false;
+        }
+
+        if (!context.LastActiveAt.HasValue)
+        {
+            return false;
+        }
+
+        var currentTime = now ?? DateTime.UtcNow;
+        return (currentTime - context.LastActiveAt.Value) > FlowTimeout;
+    }
+
     public async Task SaveCurrentAsync()
     {
         if (_currentContext != null)
         {
-            //設定Session有效時間為一小時
+            _currentContext.LastActiveAt ??= DateTime.UtcNow;
+
+            //設定Session有效時間為一天
             var options = new DistributedCacheEntryOptions()
-                .SetSlidingExpiration(TimeSpan.FromHours(1));
+                .SetSlidingExpiration(TimeSpan.FromDays(1));
                 
             var json = JsonSerializer.Serialize(_currentContext);
             await _cache.SetStringAsync(_currentContext.UserId, json, options);
@@ -60,6 +81,7 @@ public class ConversationStateManager
     {
         var context = GetOrCreate(userId);
         context.State = state;
+        context.LastActiveAt = DateTime.UtcNow;
     }
 
     public void Reset(string userId)
@@ -69,5 +91,6 @@ public class ConversationStateManager
         context.CurrentItemId = null;
         context.PendingSave = null;
         context.PendingEdit = null;
+        context.LastActiveAt = DateTime.UtcNow;
     }
 }

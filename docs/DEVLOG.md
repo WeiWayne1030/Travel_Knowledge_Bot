@@ -2,7 +2,7 @@
 
 本文件記錄 **Okinawa Travel Knowledge Bot** 從需求分析到實作的開發歷程，方便日後回顧設計決策、追蹤進度與規劃下一步。
 
-> 最後更新：2026-10-14
+> 最後更新：2026-10-16
 > 分支：`main`（遠端 `origin/main`）
 
 ---
@@ -26,9 +26,10 @@
 | 13 | 2026-10-07 | `a812092` | 整合 Redis 狀態管理與 Docker 部署 | 引入 StackExchangeRedisCache 進行對話狀態分散式快取，建立 Dockerfile 與 docker-compose.yml 達成 API、Redis 與 SQLite 資料持久化部署。 |
 | 14 | 2026-10-07 | `b5329fc` | 徹底重構與資安修補 | 將測試用的後門與不雅程式碼移除。導入 `ILineClient` 介面進行 DI 抽換，並在測試環境動態生成真實 HMAC 簽章以修補 `LineSignatureValidator` 的資安漏洞。 |
 | 15 | 2026-10-08 | `e375d38` | 流程優化與中文化體驗 | 新增喚醒/休眠機制（旅遊小幫手/再見小幫手）。全面將指令中文化（儲存、查詢、編輯、刪除、繼續、返回主選單）。強化 Query 功能動態拉取資料庫現有分類提示使用者。 |
-| 16 | 2026-10-14 | `64825ee` | 修復 CRUD 流程無法退出選單 | 「再見小幫手」/「返回主選單」改為全域攔截；返回主選單會重置暫存並重新顯示喚醒提示；統一提示文字為「返回主選單」。 |
-| 17 | 2026-10-14 | — | 編輯流程彈性化重構 (任一欄位修改) | 實作 `EditInputParser` 與 `EditInputParseResult`，支援 URL、類別、名稱單一或多項自由修改；`UpdateTravelItemRequest` 改為 Nullable；`EditService` 支援局部更新並優化重複名稱檢查。 |
-| 18 | 2026-10-16 | — | 多目的地分區支援 (切換地區/國家) | TravelItem 增加 Destination 欄位並配置預設值與索引；ITravelItemRepository / Services 支援地區篩選；新增 SwitchDestination 狀態與「切換地區」指令。 |
+| 16 | 2026-10-14 | `ebce0a3` | 修復 CRUD 流程無法退出選單 | 「再見小幫手」/「返回主選單」改為全域攔截；返回主選單會重置暫存並重新顯示喚醒提示；統一提示文字為「返回主選單」。 |
+| 17 | 2026-10-14 | `3a2bf2e` | 編輯流程彈性化重構 (任一欄位修改) | 實作 `EditInputParser` 與 `EditInputParseResult`，支援 URL、類別、名稱單一或多項自由修改；`UpdateTravelItemRequest` 改為 Nullable；`EditService` 支援局部更新並優化重複名稱檢查。 |
+| 18 | 2026-10-16 | `bc98fff` | 多目的地分區支援 (切換地區/國家) | TravelItem 增加 Destination 欄位並配置預設值與索引；ITravelItemRepository / Services 支援地區篩選；新增 SwitchDestination 狀態與「切換地區」指令。 |
+| 19 | 2026-10-16 | — | Redis 快取延長與流程逾時分級管理 | 將 Redis 快取延長至 1 天並保留地區偏好，加入 1 小時暫態流程逾時重置與提示機制；修補 DI 容器漏註冊與 EditInputParser URL 解析 Bug，98 測試全數通過。 |
 ---
 
 ## 📌 各階段詳細紀錄
@@ -248,7 +249,7 @@
   - 修改 `ITravelItemRepository` 新增 `GetDistinctCategoriesAsync()`，可利用 EF Core 的 `.Distinct()` 語法，效能極佳地撈出資料庫現有分類。
   - 將 `QueryService` 注入至 `ProcessMessageCommandHandler`。當使用者輸入 `查詢` 時，除了顯示提示訊息外，會動態列出目前擁有的類別，大幅提升 UX（解決了 FR-008 未知分類的痛點）。
 
-### Phase 16 — 修復 CRUD 流程無法退出選單（`64825ee`）
+### Phase 16 — 修復 CRUD 流程無法退出選單（`ebce0a3`）
 
 **問題**：喚醒進入主選單、再選擇 儲存／查詢／編輯／刪除 後，使用者無法退出選單。
 
@@ -264,7 +265,7 @@
 - **測試**：`MessageHandlerTests` 中兩個 Return 測試原本斷言為 `Idle`（與測試名稱不符），改為斷言 `MainMenu`。65 個測試全數通過。
 - **後續**：各 FlowHandler 內的 `BotCommand.Return` 分支已被全域攔截，目前不會被執行，可視需要清除。
 
-### Phase 17 — 編輯流程彈性化重構（支援單項/多項自由修改）（2026-10-14）
+### Phase 17 — 編輯流程彈性化重構（支援單項/多項自由修改）（`3a2bf2e`）
 
 **目標**：解除修改資料時強制必須輸入「URL、#類別、名稱」三項的限制，允許使用者自由修改單一欄位（如僅改 URL、僅改類別、僅改名稱）或任意組合，未輸入的欄位自動保留原值。
 
@@ -297,7 +298,7 @@
     - 新增 `EditInputParserTests` 驗證全欄位、單欄位（URL、類別、名稱）、雙欄位組合、標籤前綴與格式錯誤處理。
     - 更新 `EditServiceTests` 與 `EditFlowHandlerTests` 加入單一欄位更新與不變更名稱時跳過重複檢查的測試。
 
-### Phase 18 — 多目的地分區支援（切換地區/國家）（2026-10-16）
+### Phase 18 — 多目的地分區支援（切換地區/國家）（`bc98fff`）
 
 **目標**：在同一資料庫內支援不同國家或地區（例如：沖繩、東京、首爾、曼谷）的資料隔離，避免使用者前往不同旅遊地點時需建立新資料庫的困擾。
 
@@ -322,6 +323,31 @@
   - **測試覆蓋**：
     - 更新 `FakeTravelItemRepository` 支援目的地篩選。
     - 於 `MessageHandlerTests`、`QueryServiceTests`、`EditFlowHandlerTests`、`DeleteFlowHandlerTests` 新增地區切換、依地區儲存/查詢/編輯/刪除之單元測試。
+
+### Phase 19 — Redis 快取延長與流程逾時分級管理（2026-10-16）
+
+**目標**：將 Redis Session 有效期延長至 1 天以維持使用者跨時段對話狀態（如目的地偏好），並實作流程逾時自動重置機制以避免長時間停滯造成的狀態陷阱（State Trap）。同時修補測試環境與輸入解析器缺陷，確保全數 98 個測試通過。
+
+- **問題背景**：
+  - 原先 Redis 快取（`IDistributedCache`）僅設定 1 小時滑動過期，對於通訊軟體的非同步使用習慣偏短，常導致使用者離開一陣子後設定好的目的地與狀態遺失。
+  - 直接將快取延長至 1 天會衍生副作用：若使用者在表單/確認流程（如 `SaveFlow`、`EditFlow`、`DeleteFlow`）中途離開，隔天回來發送一般對話時會誤觸舊流程解析，導致狀態卡死或體驗困惑。
+- **重構與設計決策**：
+  - **狀態分級過期機制 (`ConversationContext` & `ConversationStateManager`)**：
+    - `ConversationContext` 新增 `LastActiveAt`（最後活動時間戳記），於任何操作與狀態變更時自動刷新。
+    - Redis 分散式快取設定為 1 天滑動過期（`SetSlidingExpiration(TimeSpan.FromDays(1))`），確保使用者基本偏好（`CurrentDestination`）長效保留。
+    - `ConversationStateManager` 新增 `FlowTimeout`（預設 1 小時）與 `IsFlowExpired(context)` 判定方法。
+  - **流程逾時攔截與友善恢復 (`ProcessMessageCommandHandler`)**：
+    - 在處理任何訊息前，優先檢查非 `Idle` 的暫態流程是否逾時。
+    - 若已逾時，自動將狀態重置（`Reset`，重置流程但保留使用者偏好目的地）：
+      - 若使用者傳送一般文字，回覆提示：「`先前的操作已逾時並已重置，請輸入「旅遊小幫手」開始。`」。
+      - 若使用者輸入「`旅遊小幫手`」，則直接重新喚醒進入主選單，並保留先前選定的地區。
+  - **測試環境與解析器修復**：
+    - **DI 容器漏註冊修復**：於 `MessageHandlerTests` 的 `ServiceCollection` 中補上缺漏的 `EditInputParser`，解決 MediatR 在執行 `EditFlowCommand` 時拋出的相依性注入錯誤。
+    - **URL 協定正規表達式修復**：修正 `EditInputParser` 中的 `DirectUrlRegex`，改為匹配通用 URI scheme（`[a-zA-Z][a-zA-Z0-9+.-]*://\S+`），使無前綴的 `ftp://` 等非 http/https 連結能被正確辨識為 URL 候選並被 URL 格式檢驗擋下，修復 `EditInputParserTests.Parse_ShouldFail_WhenUrlIsInvalidScheme`。
+  - **測試覆蓋**：
+    - 於 `ConversationStateManagerTests` 增加 `IsFlowExpired` 涵蓋測試（Idle 狀態、有效時間內、逾時判定）。
+    - 於 `MessageHandlerTests` 增加流程逾時自動重置提示與直接重新喚醒之整合測試。
+    - 現有 98 項單元與整合測試全數通過（`Passed: 98, Failed: 0`）。
 
 ---
 

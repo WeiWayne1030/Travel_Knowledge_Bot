@@ -8,7 +8,7 @@ public class EditInputParser
         new(@"(?:網址|url)\s*[:：]\s*(?<url>\S+)", RegexOptions.IgnoreCase);
 
     private static readonly Regex DirectUrlRegex =
-        new(@"(?<url>https?://\S+)", RegexOptions.IgnoreCase);
+        new(@"(?<url>[a-zA-Z][a-zA-Z0-9+.-]*://\S+)", RegexOptions.IgnoreCase);
 
     private static readonly Regex ExplicitCategoryRegex =
         new(@"(?:類別|分類|category)\s*[:：]\s*#?(?<cat>[^\s#]+)", RegexOptions.IgnoreCase);

@@ -37,6 +37,33 @@ public class ProcessMessageCommandHandler : IRequestHandler<ProcessMessageComman
 
         BotResponse response;
 
+        // 檢查暫態流程是否逾時
+        if (_stateManager.IsFlowExpired(context))
+        {
+            _stateManager.Reset(userId);
+
+            if (message.Trim() == "旅遊小幫手")
+            {
+                _stateManager.SetState(userId, ConversationState.MainMenu);
+                response = new BotResponse
+                {
+                    Message = GetWakeUpNotice(context.CurrentDestination)
+                };
+            }
+            else
+            {
+                response = new BotResponse
+                {
+                    Message = "先前的操作已逾時並已重置，請輸入「旅遊小幫手」開始。"
+                };
+            }
+
+            await _stateManager.SaveCurrentAsync();
+            return response;
+        }
+
+        context.LastActiveAt = DateTime.UtcNow;
+
         if (context.State == ConversationState.Idle)
         {
             if (message.Trim() == "旅遊小幫手")
