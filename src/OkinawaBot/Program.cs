@@ -27,6 +27,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     {
         options.UseNpgsql(connectionString);
     }
+    options.ConfigureWarnings(warnings =>
+        warnings.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
 });
 
 //repository優先處理
