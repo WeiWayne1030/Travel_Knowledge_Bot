@@ -162,11 +162,21 @@ public class MessageHandlerTests
     {
         const string userId = "user-1";
 
+        await _repository.CreateAsync(new TravelItem
+        {
+            Destination = "沖繩",
+            Name = "美麗海水族館",
+            Url = "https://example.com",
+            Category = "Attraction"
+        });
+
         await HandleAsync(userId, "旅遊小幫手");
-        await HandleAsync(userId, "編輯");
+        var response = await HandleAsync(userId, "編輯");
 
         var context = _stateManager.GetOrCreate(userId);
         Assert.Equal(ConversationState.EditItemSelection, context.State);
+        Assert.Contains("目前可編輯的項目：", response.Message);
+        Assert.Contains("美麗海水族館", response.Message);
     }
 
     // 測 Edit Flow 的實際 routing
@@ -196,11 +206,23 @@ public class MessageHandlerTests
     [Fact]
     public async Task HandleAsync_WhenDeleteCommand_ShouldEnterDeleteFlow()
     {
-        await HandleAsync("test-user", "旅遊小幫手");
-        await HandleAsync("test-user", "刪除");
+        const string userId = "test-user";
 
-        var context = _stateManager.GetOrCreate("test-user");
+        await _repository.CreateAsync(new TravelItem
+        {
+            Destination = "沖繩",
+            Name = "波上宮",
+            Url = "https://example.com/naminoue",
+            Category = "Attraction"
+        });
+
+        await HandleAsync(userId, "旅遊小幫手");
+        var response = await HandleAsync(userId, "刪除");
+
+        var context = _stateManager.GetOrCreate(userId);
         Assert.Equal(ConversationState.DeleteFlow, context.State);
+        Assert.Contains("目前可刪除的項目：", response.Message);
+        Assert.Contains("波上宮", response.Message);
     }
 
     [Fact]

@@ -358,9 +358,12 @@
   - 於 `.github/workflows/dotnet.yml` 建立標準 GitHub Actions CI 流程，在 `main` 分支的 push 與 PR 時自動執行 `dotnet restore`、`dotnet build` 與 `dotnet test`。
 - **清除重複的 Webhook 模型**：
   - 廢棄 `Application/Models/LineWebhookRequest.cs`，整合測試（`LineWebhookTests.cs`）全數統一使用正式的 `OkinawaBot.Infrastructure.Line.LineWebhookRequest` 與 `LineWebhookEvent`。
-- **完善 SaveFlow 的 URL 格式校驗**：
+- **完善 SaveFlow 的 URL 格式校驗與錯誤範例提示**：
   - 原先 `SaveInputParser` 僅檢查 URL 字串是否存在，未檢查 Scheme 與格式；現已補齊 `Uri.TryCreate` 與 http/https 協定檢查，與 `EditInputParser` 一致。
-  - 於 `SaveInputParseTests.cs` 補上無效與非 http/https URL 之單元測試。
+  - 各項輸入錯誤提示末端均附加標準格式範例（`URL #分類 名稱`），完善 FR-012。
+  - 於 `SaveInputParseTests.cs` 與 `SaveFlowHandlerTests.cs` 補上對應單元測試。
+- **編輯與刪除流程體驗優化 (UX)**：
+  - 在主選單進入「編輯」與「刪除」流程時，動態調用 `QueryService.GetAllItemsAsync` 列出目前地區的所有旅遊項目編號、名稱與類別，使使用者不再需要盲猜編號。
 
 ---
 
@@ -392,9 +395,7 @@
 
 ## 🧹 已知問題與技術債
 
-- 進入「編輯／刪除」流程時不會列出項目清單，使用者需自行猜測編號（編號為目前地區全部項目的序號）。
 - 完成流程後狀態回到 `Idle`（不是主選單），需重新輸入「旅遊小幫手」。
-- 各 FlowHandler 內的 `BotCommand.Return` 分支已被全域攔截，不會被執行，可清除。
 
 ---
 

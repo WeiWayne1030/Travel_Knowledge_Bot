@@ -34,4 +34,9 @@ public class QueryService
     {
         return await _repository.GetDistinctDestinationsAsync();
     }
+
+    public async Task<IReadOnlyList<TravelItem>> GetAllItemsAsync(string? destination = null)
+    {
+        return await _repository.GetAllAsync(destination);
+    }
 }

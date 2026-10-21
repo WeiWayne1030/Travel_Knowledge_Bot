@@ -513,7 +513,7 @@ Business Rules
 
 BR-023
 
-The system SHALL identify the saved item selected by the user by its 1-based number in the list of all saved items of the current destination. Note: the list itself is not displayed when entering the Edit flow.
+When entering the Edit flow, the system SHALL display the list of all saved items for the current destination along with their numbers, and identify the saved item selected by the user by its 1-based number.
 
 BR-024
 
@@ -545,7 +545,7 @@ Business Rules
 
 BR-025
 
-The system SHALL select the item by its 1-based number in the list of all saved items of the current destination (the list is not displayed in the flow), and SHALL request confirmation by asking the user to enter `繼續` before permanently deleting it. Any other input re-displays the prompt; `返回主選單` cancels.
+When entering the Delete flow, the system SHALL display the list of all saved items for the current destination along with their numbers. The user selects the item by its 1-based number, and the system SHALL request confirmation by asking the user to enter `繼續` before permanently deleting it. Any other input re-displays the prompt; `返回主選單` cancels.
 
 BR-026
 
@@ -713,8 +713,6 @@ The system SHALL integrate with the LINE Messaging API (webhook and reply API).
 
 ## 9. Future Enhancements
 
-- Attach a complete valid input example to Save error messages (FR-012).
-- Display the numbered item list when entering the Edit and Delete flows.
 - Optional category whitelist or suggestions.
 - Keyword search across categories and fields.
 - LINE Flex Message / Quick Reply for queries and confirmations; pagination for long results.

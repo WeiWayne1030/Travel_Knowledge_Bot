@@ -113,7 +113,7 @@ OkinawaBot/
 | MainMenu | `儲存` / `查詢` / `編輯` / `刪除` / `切換地區`（或 `切換目的地`） |
 | SaveFlow | `URL #類別 名稱`（單行或多行；`#類別` 前為 URL、後為名稱；URL 必須以 http:// 或 https:// 開頭） |
 | QueryFlow | 類別名稱（需與資料庫現有類別完全相符，限定目前地區） |
-| EditItemSelection / DeleteFlow | 項目編號（目前地區全部項目的 1-based 序號；進入流程時不會列出清單） |
+| EditItemSelection / DeleteFlow | 項目編號（進入流程時會動態列出目前地區的所有項目與 1-based 編號供選擇） |
 | EditDataInput | 單項或多項：`URL`、`#類別`、`名稱`，或 `網址:` / `類別:` / `名稱:` 前綴（URL 必須以 http:// 或 https:// 開頭） |
 | 各確認狀態 | `繼續` 或 `返回主選單` |
 

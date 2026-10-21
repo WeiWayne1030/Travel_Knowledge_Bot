@@ -173,16 +173,26 @@ public class ProcessMessageCommandHandler : IRequestHandler<ProcessMessageComman
 
             case BotCommand.Edit:
                 _stateManager.SetState(userId, ConversationState.EditItemSelection);
+                var editableItems = await _queryService.GetAllItemsAsync(context.CurrentDestination);
+                var editableListMsg = editableItems.Any()
+                    ? "\n目前可編輯的項目：\n" + string.Join("\n", editableItems.Select((item, idx) => $"{idx + 1}. {item.Name} (#{item.Category})"))
+                    : "\n目前尚無任何項目。";
+
                 return new BotResponse
                 {
-                    Message = $"""【{context.CurrentDestination}】請輸入要編輯的項目編號或"返回主選單"。"""
+                    Message = $"""【{context.CurrentDestination}】請輸入要編輯的項目編號或"返回主選單"。{editableListMsg}"""
                 };
 
             case BotCommand.Delete:
                 _stateManager.SetState(userId, ConversationState.DeleteFlow);
+                var deletableItems = await _queryService.GetAllItemsAsync(context.CurrentDestination);
+                var deletableListMsg = deletableItems.Any()
+                    ? "\n目前可刪除的項目：\n" + string.Join("\n", deletableItems.Select((item, idx) => $"{idx + 1}. {item.Name} (#{item.Category})"))
+                    : "\n目前尚無任何項目。";
+
                 return new BotResponse
                 {
-                    Message = $"""【{context.CurrentDestination}】請輸入要刪除的項目編號或"返回主選單"。"""
+                    Message = $"""【{context.CurrentDestination}】請輸入要刪除的項目編號或"返回主選單"。{deletableListMsg}"""
                 };
 
             case BotCommand.SwitchDestination:
