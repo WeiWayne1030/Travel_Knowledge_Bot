@@ -13,6 +13,8 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
+        builder.UseEnvironment("Testing");
+
         builder.ConfigureServices(services =>
         {
             services.Configure<LineBotOptions>(options => 
@@ -20,13 +22,6 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
                 options.ChannelSecret = "test_secret";
                 options.ChannelAccessToken = "";
             });
-        });
-
-        builder.ConfigureServices(services =>
-        {
-            // Remove real DbContext
-            var dbContextDesc = services.SingleOrDefault(d => d.ServiceType == typeof(DbContextOptions<AppDbContext>));
-            if (dbContextDesc != null) services.Remove(dbContextDesc);
 
             // Remove real Redis Cache
             var redisDesc = services.SingleOrDefault(d => d.ServiceType == typeof(Microsoft.Extensions.Caching.Distributed.IDistributedCache));
@@ -39,19 +34,16 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
             // Add Fakes
             services.AddSingleton<Microsoft.Extensions.Caching.Distributed.IDistributedCache, OkinawaBot.Tests.Fakes.FakeDistributedCache>();
             services.AddSingleton<ILineClient, OkinawaBot.Tests.Fakes.FakeLineClient>();
-
-            // Add test DbContext
-            services.AddDbContext<AppDbContext>(options =>
-            {
-                options.UseSqlite("Data Source=test.db");
-            });
-
-            // 建立測試 Database
-            var serviceProvider = services.BuildServiceProvider();
-            using var scope = serviceProvider.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            db.Database.EnsureDeleted();
-            db.Database.Migrate();
         });
+    }
+
+    protected override Microsoft.Extensions.Hosting.IHost CreateHost(Microsoft.Extensions.Hosting.IHostBuilder builder)
+    {
+        var host = base.CreateHost(builder);
+        using var scope = host.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        db.Database.EnsureDeleted();
+        db.Database.Migrate();
+        return host;
     }
 }
