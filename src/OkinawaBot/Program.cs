@@ -14,9 +14,20 @@ var builder = WebApplication.CreateBuilder(args);
 
 //Infrastructuer
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlite(
-        builder.Configuration.GetConnectionString(
-            "DefaultConnection")));
+{
+    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+    if (builder.Environment.IsEnvironment("Testing") ||
+        connectionString?.StartsWith("Data Source=", StringComparison.OrdinalIgnoreCase) == true)
+    {
+        options.UseSqlite(builder.Environment.IsEnvironment("Testing")
+            ? "Data Source=test.db"
+            : connectionString);
+    }
+    else
+    {
+        options.UseNpgsql(connectionString);
+    }
+});
 
 //repository優先處理
 builder.Services.AddScoped<ITravelItemRepository, TravelItemRepository>();
