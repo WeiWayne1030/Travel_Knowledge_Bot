@@ -58,10 +58,10 @@ public class SaveFlowHandlerTests
             stateManager.GetOrCreate(userId);
 
         Assert.Equal(
-            ConversationState.Idle,
+            ConversationState.MainMenu,
             context.State);
 
-        Assert.Equal(
+        Assert.Contains(
             "旅遊資訊儲存成功。",
             response.Message);
     }
@@ -229,10 +229,10 @@ public class SaveFlowHandlerTests
             stateManager.GetOrCreate(userId);
 
         Assert.Equal(
-            ConversationState.Idle,
+            ConversationState.MainMenu,
             context.State);
 
-        Assert.Equal(
+        Assert.Contains(
             "旅遊資訊儲存成功。",
             response.Message);
 

@@ -8,7 +8,7 @@ public class ConversationStateManager
     private readonly IDistributedCache _cache;
     private ConversationContext? _currentContext;
 
-    public TimeSpan FlowTimeout { get; set; } = TimeSpan.FromHours(1);
+    public TimeSpan FlowTimeout { get; set; } = TimeSpan.FromMinutes(10);
 
     public ConversationStateManager(IDistributedCache cache)
     {
@@ -88,6 +88,16 @@ public class ConversationStateManager
     {
         var context = GetOrCreate(userId);
         context.State = ConversationState.Idle;
+        context.CurrentItemId = null;
+        context.PendingSave = null;
+        context.PendingEdit = null;
+        context.LastActiveAt = DateTime.UtcNow;
+    }
+
+    public void ResetToMainMenu(string userId)
+    {
+        var context = GetOrCreate(userId);
+        context.State = ConversationState.MainMenu;
         context.CurrentItemId = null;
         context.PendingSave = null;
         context.PendingEdit = null;

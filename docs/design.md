@@ -22,36 +22,35 @@ stateDiagram-v2
     SwitchDestination --> MainMenu: 選號碼或輸入新地區
 
     SaveFlow --> SaveDuplicateConfirmation: 同地區名稱重複
-    SaveFlow --> Idle: 儲存成功
-    SaveDuplicateConfirmation --> Idle: 繼續（儲存）
+    SaveFlow --> MainMenu: 儲存成功
+    SaveDuplicateConfirmation --> MainMenu: 繼續（儲存）
 
-    QueryFlow --> Idle: 查到結果
+    QueryFlow --> MainMenu: 查到結果
     QueryFlow --> QueryFlow: 查無資料，重新輸入
 
     EditItemSelection --> EditDataInput: 輸入項目編號
     EditDataInput --> EditDuplicateConfirmation: 新名稱重複
-    EditDataInput --> Idle: 修改成功
-    EditDuplicateConfirmation --> Idle: 繼續（儲存）
+    EditDataInput --> MainMenu: 修改成功
+    EditDuplicateConfirmation --> MainMenu: 繼續（儲存）
 
     DeleteFlow --> DeleteConfirmation: 輸入項目編號
-    DeleteConfirmation --> Idle: 繼續（刪除）
+    DeleteConfirmation --> MainMenu: 繼續（刪除）
 ```
 
 ### 全域指令（在非 Idle 狀態皆優先攔截）
 
 | 指令 | 行為 |
 |------|------|
-| `返回主選單` | `Reset`（清除 CurrentItemId / PendingSave / PendingEdit，保留目的地）→ `MainMenu`，並重新顯示喚醒提示 |
+| `返回主選單` | `ResetToMainMenu`（清除 CurrentItemId / PendingSave / PendingEdit，保留目的地）→ `MainMenu`，並重新顯示喚醒提示 |
 | `再見小幫手` | `Reset` → `Idle`，回覆「已退出小幫手。」 |
 
-### 逾時
+### 逾時與連續操作
 
-- 非 `Idle` 狀態超過 **1 小時**（`FlowTimeout`）未活動，下一則訊息先重置流程。
+- 流程完成後（儲存／編輯／刪除成功、查詢出結果）狀態回到 `MainMenu`（連續操作模式），回覆訊息附帶主選單提示，使用者不需重新輸入「旅遊小幫手」即可繼續操作。
+- 非 `Idle` 狀態超過 **10 分鐘**（`FlowTimeout`）未活動，下一則訊息先重置流程：
   - 訊息為 `旅遊小幫手`：直接回主選單（保留目的地）。
   - 其他訊息：回覆「先前的操作已逾時並已重置，請輸入「旅遊小幫手」開始。」
 - Redis 快取為 **1 天**滑動過期（目的地偏好長效保留）。
-
-> 流程完成後（儲存／編輯／刪除成功、查詢出結果）狀態回到 `Idle`，使用者需再輸入「旅遊小幫手」。
 
 ## 2. 系統架構
 

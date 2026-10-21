@@ -9,7 +9,7 @@ namespace OkinawaBot.Application.Handlers;
 public class ProcessMessageCommandHandler : IRequestHandler<ProcessMessageCommand, BotResponse>
 {
     private static string GetWakeUpNotice(string destination) =>
-        $"您好！我是旅遊小幫手。\n目前地區：【{destination}】 📍\n請輸入 儲存、查詢、編輯、刪除、切換地區 或輸入「再見小幫手」退出。";
+        $"您好！我是旅遊小幫手。\n目前地區：【{destination}】 📍\n{BotMessages.MainMenuPrompt}";
 
     private readonly ConversationStateManager _stateManager;
     private readonly BotCommandParser _commandParser;
@@ -92,8 +92,7 @@ public class ProcessMessageCommandHandler : IRequestHandler<ProcessMessageComman
         }
         else if (_commandParser.Parse(message) == BotCommand.Return)
         {
-            _stateManager.Reset(userId);
-            _stateManager.SetState(userId, ConversationState.MainMenu);
+            _stateManager.ResetToMainMenu(userId);
             response = new BotResponse
             {
                 Message = GetWakeUpNotice(context.CurrentDestination)
@@ -217,7 +216,7 @@ public class ProcessMessageCommandHandler : IRequestHandler<ProcessMessageComman
             default:
                 return new BotResponse
                 {
-                    Message = $"請輸入 儲存、查詢、編輯、刪除、切換地區 或輸入「再見小幫手」退出。"
+                    Message = BotMessages.MainMenuPrompt
                 };
         }
     }

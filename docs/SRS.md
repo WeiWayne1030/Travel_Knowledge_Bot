@@ -203,7 +203,7 @@ The system SHALL also accept `再見小幫手` in any non-Idle state; it SHALL r
 
 BR-035
 
-When a Save, Edit or Delete flow completes (success or failure), or a Query returns results, the conversation SHALL return to Idle. The user needs to type `旅遊小幫手` again to continue.
+When a Save, Edit or Delete flow completes successfully, or a Query returns results, the conversation SHALL return to the Main Menu with a menu prompt to allow continuous operations without re-entering `旅遊小幫手`. If the user remains inactive in the Main Menu (or any non-Idle state) for more than 10 minutes, the conversation automatically times out and resets to Idle.
 
 Acceptance Criteria
 
@@ -657,7 +657,7 @@ Then the system SHALL set the current destination, confirm the change and return
 
 FR-018 — Flow Timeout
 
-The system SHALL reset any non-Idle conversation that has been inactive for more than 1 hour.
+The system SHALL reset any non-Idle conversation that has been inactive for more than 10 minutes.
 
 Business Rules
 

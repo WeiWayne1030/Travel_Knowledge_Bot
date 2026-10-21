@@ -31,6 +31,7 @@
 | 18 | 2026-10-16 | `bc98fff` | 多目的地分區支援 (切換地區/國家) | TravelItem 增加 Destination 欄位並配置預設值與索引；ITravelItemRepository / Services 支援地區篩選；新增 SwitchDestination 狀態與「切換地區」指令。 |
 | 19 | 2026-10-16 | — | Redis 快取延長與流程逾時分級管理 | 將 Redis 快取延長至 1 天並保留地區偏好，加入 1 小時暫態流程逾時重置與提示機制；修補 DI 容器漏註冊與 EditInputParser URL 解析 Bug，98 測試全數通過。 |
 | 20 | 2026-10-21 | — | 技術債清理與品質強化 | 建立 GitHub Actions CI 自動化測試建置流程；移除 Application/Models 下重複的 LineWebhookRequest；為 SaveInputParser 補齊 URL http/https 格式驗證與單元測試。 |
+| 21 | 2026-10-21 | — | 連續操作支援與待機逾時調整 (10分鐘) | 各流程完成後回到 MainMenu 實現免重複喚醒連續操作；將待機逾時由 1 小時調至 10 分鐘；100 項測試全數通過。 |
 ---
 
 ## 📌 各階段詳細紀錄
@@ -365,6 +366,20 @@
 - **編輯與刪除流程體驗優化 (UX)**：
   - 在主選單進入「編輯」與「刪除」流程時，動態調用 `QueryService.GetAllItemsAsync` 列出目前地區的所有旅遊項目編號、名稱與類別，使使用者不再需要盲猜編號。
 
+### Phase 21 — 連續操作支援與待機逾時調整 (10分鐘)（2026-10-21）
+
+**目標**：解決使用者完成單次操作後必須重新輸入「旅遊小幫手」的不便，實現連續操作體驗；同時將待機時間由 1 小時下調至 10 分鐘，兼顧使用流暢度與對話狀態安全性。
+
+- **支援連續操作（Continuous Operation）**：
+  - 於 `ConversationStateManager` 新增 `ResetToMainMenu(userId)` 方法，在清空單次操作暫存（`CurrentItemId`、`PendingSave`、`PendingEdit`）的同時，將狀態設為 `ConversationState.MainMenu`，並保留當前選定地區（`CurrentDestination`）。
+  - 各業務流程（`SaveFlowHandler`、`QueryFlowHandler`、`EditFlowHandler`、`DeleteFlowHandler`）在成功執行或完成後，全面改呼叫 `ResetToMainMenu`，回覆訊息末尾統一附帶選單接續提示（`BotMessages.MainMenuPrompt`），使用者可直接輸入下一個操作或「再見小幫手」退出。
+- **待機逾時時間微調為 10 分鐘**：
+  - 將 `ConversationStateManager.FlowTimeout` 預設時間由 1 小時調整為 10 分鐘（`TimeSpan.FromMinutes(10)`）。
+  - 使用者在主選單或各流程中若超過 10 分鐘未發送訊息，系統在被動接收下一則訊息時會自動判定過期並重置為 `Idle`，避免非同步通訊長期待機產生狀態陷阱。
+- **測試與文件同步更新**：
+  - 同步更新各 FlowHandler 單元測試中斷言狀態由 `Idle` 改為 `MainMenu`，目前全數 100 個測試全數通過（`Passed: 100, Failed: 0`）。
+  - 同步更新 `SRS.md`（BR-035、FR-018）與 `design.md`（狀態轉移 Mermaid 圖與逾時說明）。
+
 ---
 
 ## ✅ SRS 需求實作進度
@@ -373,7 +388,7 @@
 |------|------|------|
 | FR-001 | 啟動 Bot 與主選單歡迎訊息 | ✅ 已完成（主選單已支援指令提示與歡迎訊息） |
 | FR-002 | 指令選擇 | ✅ 已完成（支援 Save、Query、Edit、Delete 與 Return） |
-| FR-003 | 對話狀態管理 | ✅ 已完成（已支援進入各 Flow 的格式提示 AC-003-01） |
+| FR-003 | 對話狀態管理 | ✅ 已完成（支援連續操作，完成後回到 MainMenu） |
 | FR-004 | Return 指令 | ✅ 已完成（全域攔截「返回主選單」，任何 Flow 皆可回主選單並重新顯示喚醒提示） |
 | FR-005 | 解析 URL / Name / Category | ✅ 已完成（格式 `URL #Category Name`，BR-030） |
 | FR-006 | 儲存旅遊資訊 | ✅ 已完成 |
@@ -388,14 +403,13 @@
 | FR-015 | 刪除 | ✅ 已完成（包含確認流程） |
 | FR-016 | 名稱重複確認 | ✅ 已完成（繼續 / 返回主選單 確認流程） |
 | FR-017 | 切換地區 | ✅ 已完成（`切換地區` / `切換目的地`，資料依地區隔離） |
-| FR-018 | 流程逾時 | ✅ 已完成（非 Idle 超過 1 小時自動重置，Redis 1 天過期） |
+| FR-018 | 流程逾時 | ✅ 已完成（非 Idle 超過 10 分鐘自動重置，Redis 1 天過期） |
 | FR-019 / — | LINE Webhook 串接 | ✅ 已完成（`LineWebhookController` 支援 HMAC-SHA256 簽章驗證、MediatR 轉發與 LINE 回覆 API） |
 
 ---
 
 ## 🧹 已知問題與技術債
 
-- 完成流程後狀態回到 `Idle`（不是主選單），需重新輸入「旅遊小幫手」。
 
 ---
 

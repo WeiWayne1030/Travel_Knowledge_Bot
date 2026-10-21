@@ -68,7 +68,10 @@ public class QueryFlowHandler : IRequestHandler<QueryFlowCommand, BotResponse>
                 $"   {items[i].Url}");
         }
 
-        _stateManager.Reset(userId);
+        _stateManager.ResetToMainMenu(userId);
+
+        response.AppendLine();
+        response.Append(BotMessages.MainMenuPrompt);
 
         return new BotResponse
         {

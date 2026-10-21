@@ -46,10 +46,10 @@ public class EditFlowHandlerTests
             _stateManager.GetOrCreate(userId);
 
         Assert.Equal(
-            ConversationState.Idle,
+            ConversationState.MainMenu,
             context.State);
 
-        Assert.Equal(
+        Assert.Contains(
             "目前沒有可以編輯的資料。",
             result.Message);
     }
@@ -171,10 +171,10 @@ public class EditFlowHandlerTests
             _stateManager.GetOrCreate(userId);
 
         Assert.Equal(
-            ConversationState.Idle,
+            ConversationState.MainMenu,
             context.State);
 
-        Assert.Equal(
+        Assert.Contains(
             "找不到目前要編輯的資料，請重新操作。",
             result.Message);
     }
@@ -246,7 +246,7 @@ public class EditFlowHandlerTests
             await _repository.FindByIdAsync(item.Id);
 
         Assert.Equal(
-            ConversationState.Idle,
+            ConversationState.MainMenu,
             context.State);
 
         Assert.Equal(
@@ -261,7 +261,7 @@ public class EditFlowHandlerTests
             "Attraction",
             updatedItem.Category);
 
-        Assert.Equal(
+        Assert.Contains(
             "旅遊資訊修改成功。",
             result.Message);
     }
@@ -288,11 +288,11 @@ public class EditFlowHandlerTests
 
         var updatedItem = await _repository.FindByIdAsync(item.Id);
 
-        Assert.Equal(ConversationState.Idle, context.State);
+        Assert.Equal(ConversationState.MainMenu, context.State);
         Assert.Equal("原始名稱", updatedItem!.Name);
         Assert.Equal("OriginalCat", updatedItem.Category);
         Assert.Equal("https://updated-only-url.com", updatedItem.Url);
-        Assert.Equal("旅遊資訊修改成功。", result.Message);
+        Assert.Contains("旅遊資訊修改成功。", result.Message);
     }
 
     //僅更新 類別
@@ -317,11 +317,11 @@ public class EditFlowHandlerTests
 
         var updatedItem = await _repository.FindByIdAsync(item.Id);
 
-        Assert.Equal(ConversationState.Idle, context.State);
+        Assert.Equal(ConversationState.MainMenu, context.State);
         Assert.Equal("原始名稱", updatedItem!.Name);
         Assert.Equal("NewCategory", updatedItem.Category);
         Assert.Equal("https://old.example.com", updatedItem.Url);
-        Assert.Equal("旅遊資訊修改成功。", result.Message);
+        Assert.Contains("旅遊資訊修改成功。", result.Message);
     }
 
     //僅更新 名稱
@@ -346,11 +346,11 @@ public class EditFlowHandlerTests
 
         var updatedItem = await _repository.FindByIdAsync(item.Id);
 
-        Assert.Equal(ConversationState.Idle, context.State);
+        Assert.Equal(ConversationState.MainMenu, context.State);
         Assert.Equal("新修改的店名", updatedItem!.Name);
         Assert.Equal("OriginalCat", updatedItem.Category);
         Assert.Equal("https://old.example.com", updatedItem.Url);
-        Assert.Equal("旅遊資訊修改成功。", result.Message);
+        Assert.Contains("旅遊資訊修改成功。", result.Message);
     }
 
     //更新 URL 與 類別 (不更新名稱)
@@ -375,11 +375,11 @@ public class EditFlowHandlerTests
 
         var updatedItem = await _repository.FindByIdAsync(item.Id);
 
-        Assert.Equal(ConversationState.Idle, context.State);
+        Assert.Equal(ConversationState.MainMenu, context.State);
         Assert.Equal("保留不變的店名", updatedItem!.Name);
         Assert.Equal("Food", updatedItem.Category);
         Assert.Equal("https://new-url.example.com", updatedItem.Url);
-        Assert.Equal("旅遊資訊修改成功。", result.Message);
+        Assert.Contains("旅遊資訊修改成功。", result.Message);
     }
 
     //測試重複資訊
@@ -477,7 +477,7 @@ public class EditFlowHandlerTests
             await _repository.FindByIdAsync(item.Id);
 
         Assert.Equal(
-            ConversationState.Idle,
+            ConversationState.MainMenu,
             context.State);
 
         Assert.Equal(
@@ -494,7 +494,7 @@ public class EditFlowHandlerTests
 
         Assert.Null(context.PendingEdit);
 
-        Assert.Equal(
+        Assert.Contains(
             "旅遊資訊修改成功。",
             result.Message);
     }

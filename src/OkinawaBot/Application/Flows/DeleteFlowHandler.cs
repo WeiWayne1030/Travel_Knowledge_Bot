@@ -63,11 +63,11 @@ public class DeleteFlowHandler : IRequestHandler<DeleteFlowCommand, BotResponse>
 
         if (items.Count == 0)
         {
-            _stateManager.Reset(userId);
+            _stateManager.ResetToMainMenu(userId);
 
             return new BotResponse
             {
-                Message = "目前沒有可以刪除的資料。"
+                Message = $"目前沒有可以刪除的資料。\n\n{BotMessages.MainMenuPrompt}"
             };
         }
 
@@ -122,12 +122,12 @@ public class DeleteFlowHandler : IRequestHandler<DeleteFlowCommand, BotResponse>
 
         if (context.CurrentItemId is null)
         {
-            _stateManager.Reset(userId);
+            _stateManager.ResetToMainMenu(userId);
 
             return new BotResponse
             {
                 Message =
-                    "找不到要刪除的項目，操作已取消。"
+                    $"找不到要刪除的項目，操作已取消。\n\n{BotMessages.MainMenuPrompt}"
             };
         }
 
@@ -137,20 +137,20 @@ public class DeleteFlowHandler : IRequestHandler<DeleteFlowCommand, BotResponse>
 
         if (!success)
         {
-            _stateManager.Reset(userId);
+            _stateManager.ResetToMainMenu(userId);
 
             return new BotResponse
             {
                 Message =
-                    "找不到這筆資料，可能已經被刪除。"
+                    $"找不到這筆資料，可能已經被刪除。\n\n{BotMessages.MainMenuPrompt}"
             };
         }
 
-        _stateManager.Reset(userId);
+        _stateManager.ResetToMainMenu(userId);
 
         return new BotResponse
         {
-            Message = "旅遊資訊刪除成功。"
+            Message = $"旅遊資訊刪除成功。\n\n{BotMessages.MainMenuPrompt}"
         };
     }
 }

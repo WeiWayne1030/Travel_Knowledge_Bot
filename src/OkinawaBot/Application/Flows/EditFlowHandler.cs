@@ -78,12 +78,12 @@ public class EditFlowHandler : IRequestHandler<EditFlowCommand, BotResponse>
 
         if (items.Count == 0)
         {
-            _stateManager.Reset(userId);
+            _stateManager.ResetToMainMenu(userId);
 
             return new BotResponse
             {
                 Message =
-                    "目前沒有可以編輯的資料。"
+                    $"目前沒有可以編輯的資料。\n\n{BotMessages.MainMenuPrompt}"
             };
         }
 
@@ -140,11 +140,11 @@ public class EditFlowHandler : IRequestHandler<EditFlowCommand, BotResponse>
     {
         if (context.CurrentItemId is null)
         {
-            _stateManager.Reset(userId);
+            _stateManager.ResetToMainMenu(userId);
 
             return new BotResponse
             {
-                Message = "找不到目前要編輯的資料，請重新操作。"
+                Message = $"找不到目前要編輯的資料，請重新操作。\n\n{BotMessages.MainMenuPrompt}"
             };
         }
 
@@ -174,11 +174,11 @@ public class EditFlowHandler : IRequestHandler<EditFlowCommand, BotResponse>
 
         if (result.Status == EditResultStatus.NotFound)
         {
-            _stateManager.Reset(userId);
+            _stateManager.ResetToMainMenu(userId);
 
             return new BotResponse
             {
-                Message = "找不到要編輯的資料。"
+                Message = $"找不到要編輯的資料。\n\n{BotMessages.MainMenuPrompt}"
             };
         }
         if (result.Status == EditResultStatus.Duplicate)
@@ -197,11 +197,11 @@ public class EditFlowHandler : IRequestHandler<EditFlowCommand, BotResponse>
             };
         }
 
-        _stateManager.Reset(userId);
+        _stateManager.ResetToMainMenu(userId);
 
         return new BotResponse
         {
-            Message = "旅遊資訊修改成功。"
+            Message = $"旅遊資訊修改成功。\n\n{BotMessages.MainMenuPrompt}"
         };
     }
 
@@ -224,12 +224,12 @@ public class EditFlowHandler : IRequestHandler<EditFlowCommand, BotResponse>
         if (context.CurrentItemId is null ||
             context.PendingEdit is null)
         {
-            _stateManager.Reset(userId);
+            _stateManager.ResetToMainMenu(userId);
 
             return new BotResponse
             {
                 Message =
-                    "找不到待處理的修改資料，請重新操作。"
+                    $"找不到待處理的修改資料，請重新操作。\n\n{BotMessages.MainMenuPrompt}"
             };
         }
 
@@ -242,19 +242,19 @@ public class EditFlowHandler : IRequestHandler<EditFlowCommand, BotResponse>
 
         if (result.Status == EditResultStatus.NotFound)
         {
-            _stateManager.Reset(userId);
+            _stateManager.ResetToMainMenu(userId);
 
             return new BotResponse
             {
-                Message = "找不到要編輯的資料。"
+                Message = $"找不到要編輯的資料。\n\n{BotMessages.MainMenuPrompt}"
             };
         }
 
-        _stateManager.Reset(userId);
+        _stateManager.ResetToMainMenu(userId);
 
         return new BotResponse
         {
-            Message = "旅遊資訊修改成功。"
+            Message = $"旅遊資訊修改成功。\n\n{BotMessages.MainMenuPrompt}"
         };
     }
 }

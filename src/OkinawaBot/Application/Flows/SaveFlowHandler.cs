@@ -69,11 +69,11 @@ public class SaveFlowHandler : IRequestHandler<SaveFlowCommand, BotResponse>
 
         if (result.Status == SaveResultStatus.Success)
         {
-            _stateManager.Reset(userId);
+            _stateManager.ResetToMainMenu(userId);
 
             return new BotResponse
             {
-                Message = result.Message
+                Message = $"{result.Message}\n\n{BotMessages.MainMenuPrompt}"
             };
         }
 
@@ -109,11 +109,11 @@ public class SaveFlowHandler : IRequestHandler<SaveFlowCommand, BotResponse>
         {
             if (context.PendingSave is null)
             {
-                _stateManager.Reset(userId);
+                _stateManager.ResetToMainMenu(userId);
 
                 return new BotResponse
                 {
-                    Message = "找不到待確認的資料，已回到主選單。"
+                    Message = $"找不到待確認的資料，已回到主選單。\n\n{BotMessages.MainMenuPrompt}"
                 };
             }
 
@@ -126,11 +126,11 @@ public class SaveFlowHandler : IRequestHandler<SaveFlowCommand, BotResponse>
             {
                 context.PendingSave = null;
 
-                _stateManager.Reset(userId);
+                _stateManager.ResetToMainMenu(userId);
 
                 return new BotResponse
                 {
-                    Message = result.Message
+                    Message = $"{result.Message}\n\n{BotMessages.MainMenuPrompt}"
                 };
             }
 

@@ -111,7 +111,7 @@ public class QueryFlowHandlerTests
             stateManager.GetOrCreate(userId);
 
         Assert.Equal(
-            ConversationState.Idle,
+            ConversationState.MainMenu,
             context.State);
 
         Assert.Contains(

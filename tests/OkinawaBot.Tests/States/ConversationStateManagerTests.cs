@@ -113,7 +113,7 @@ public class ConversationStateManagerTests
         var manager = new ConversationStateManager(new FakeDistributedCache());
         manager.SetState("user-001", ConversationState.SaveFlow);
         var context = manager.GetOrCreate("user-001");
-        context.LastActiveAt = DateTime.UtcNow.AddMinutes(-30);
+        context.LastActiveAt = DateTime.UtcNow.AddMinutes(-5);
 
         var isExpired = manager.IsFlowExpired(context);
 
