@@ -52,7 +52,7 @@ public class SaveFlowHandler : IRequestHandler<SaveFlowCommand, BotResponse>
         {
             return new BotResponse
             {
-                Message = parseResult.ErrorMessage!
+                Message = BotMessages.WithRetryHint(parseResult.ErrorMessage!)
             };
         }
 
@@ -73,7 +73,7 @@ public class SaveFlowHandler : IRequestHandler<SaveFlowCommand, BotResponse>
 
             return new BotResponse
             {
-                Message = $"{result.Message}\n\n{BotMessages.MainMenuPrompt}"
+                Message = BotMessages.WithMainMenu(result.Message)
             };
         }
 
@@ -88,13 +88,13 @@ public class SaveFlowHandler : IRequestHandler<SaveFlowCommand, BotResponse>
             {
                 Message =
                     $"名稱「{saveRequest.Name}」已經存在，是否仍要儲存？\n" +
-                    "請輸入 繼續 或 返回主選單。"
+                    BotMessages.ContinueOrReturnPrompt
             };
         }
 
         return new BotResponse
         {
-            Message = result.Message
+            Message = BotMessages.WithRetryHint(result.Message)
         };
     }
 
@@ -113,7 +113,7 @@ public class SaveFlowHandler : IRequestHandler<SaveFlowCommand, BotResponse>
 
                 return new BotResponse
                 {
-                    Message = $"找不到待確認的資料，已回到主選單。\n\n{BotMessages.MainMenuPrompt}"
+                    Message = BotMessages.WithMainMenu("找不到待確認的資料，已回到主選單。")
                 };
             }
 
@@ -130,19 +130,19 @@ public class SaveFlowHandler : IRequestHandler<SaveFlowCommand, BotResponse>
 
                 return new BotResponse
                 {
-                    Message = $"{result.Message}\n\n{BotMessages.MainMenuPrompt}"
+                    Message = BotMessages.WithMainMenu(result.Message)
                 };
             }
 
             return new BotResponse
             {
-                Message = result.Message
+                Message = $"{result.Message}\n\n請輸入「返回主選單」重新開始。"
             };
         }
 
         return new BotResponse
         {
-            Message = "請輸入 繼續 或 返回主選單。"
+            Message = BotMessages.ContinueOrReturnPrompt
         };
     }
 }

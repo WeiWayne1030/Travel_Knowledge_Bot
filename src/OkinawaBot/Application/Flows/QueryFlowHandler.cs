@@ -33,7 +33,7 @@ public class QueryFlowHandler : IRequestHandler<QueryFlowCommand, BotResponse>
         {
             return new BotResponse
             {
-                Message = "類別不可為空"
+                Message = "類別不可為空，請輸入欲查詢的類別，或輸入「返回主選單」。"
             };
         }
 
@@ -49,7 +49,7 @@ public class QueryFlowHandler : IRequestHandler<QueryFlowCommand, BotResponse>
             return new BotResponse
             {
                 Message =
-                    $"在【{context.CurrentDestination}】找不到類別「{category}」的資料，請重新輸入。"
+                    $"在【{context.CurrentDestination}】找不到類別「{category}」的資料，請重新輸入，或輸入「返回主選單」。"
             };
         }
 
@@ -71,6 +71,7 @@ public class QueryFlowHandler : IRequestHandler<QueryFlowCommand, BotResponse>
         _stateManager.ResetToMainMenu(userId);
 
         response.AppendLine();
+        response.AppendLine("已為您回到主選單。");
         response.Append(BotMessages.MainMenuPrompt);
 
         return new BotResponse

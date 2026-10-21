@@ -63,7 +63,7 @@ public class EditFlowHandler : IRequestHandler<EditFlowCommand, BotResponse>
 
         return new BotResponse
         {
-            Message = "目前無法處理這個操作。"
+            Message = BotMessages.OperationNotSupported
         };
     }
 
@@ -82,8 +82,7 @@ public class EditFlowHandler : IRequestHandler<EditFlowCommand, BotResponse>
 
             return new BotResponse
             {
-                Message =
-                    $"目前沒有可以編輯的資料。\n\n{BotMessages.MainMenuPrompt}"
+                Message = BotMessages.NoItemsToProcess("編輯")
             };
         }
 
@@ -93,8 +92,7 @@ public class EditFlowHandler : IRequestHandler<EditFlowCommand, BotResponse>
         {
             return new BotResponse
             {
-                Message =
-                    "請輸入有效的項目編號。"
+                Message = BotMessages.InvalidItemNumber
             };
         }
 
@@ -103,8 +101,7 @@ public class EditFlowHandler : IRequestHandler<EditFlowCommand, BotResponse>
         {
             return new BotResponse
             {
-                Message =
-                    $"請輸入 1 到 {items.Count} 之間的項目編號。"
+                Message = BotMessages.ItemNumberOutOfRange(items.Count)
             };
         }
 
@@ -129,7 +126,8 @@ public class EditFlowHandler : IRequestHandler<EditFlowCommand, BotResponse>
                 "• 僅改網址：輸入新 URL（例如 https://...）\n" +
                 "• 僅改類別：輸入 #新類別（例如 #美食）\n" +
                 "• 僅改名稱：輸入新名稱（例如 美麗海水族館 或 名稱: 美麗海水族館）\n" +
-                "• 多項修改：URL #新類別 新名稱"
+                "• 多項修改：URL #新類別 新名稱\n\n" +
+                "（若要取消修改，請輸入「返回主選單」）"
         };
     }
 
@@ -144,7 +142,7 @@ public class EditFlowHandler : IRequestHandler<EditFlowCommand, BotResponse>
 
             return new BotResponse
             {
-                Message = $"找不到目前要編輯的資料，請重新操作。\n\n{BotMessages.MainMenuPrompt}"
+                Message = BotMessages.WithMainMenu("找不到目前要編輯的資料，請重新操作。")
             };
         }
 
@@ -155,8 +153,7 @@ public class EditFlowHandler : IRequestHandler<EditFlowCommand, BotResponse>
         {
             return new BotResponse
             {
-                Message = parseResult.ErrorMessage
-                    ?? "輸入格式錯誤。"
+                Message = BotMessages.WithRetryHint(parseResult.ErrorMessage ?? "輸入格式錯誤。")
             };
         }
 
@@ -178,7 +175,7 @@ public class EditFlowHandler : IRequestHandler<EditFlowCommand, BotResponse>
 
             return new BotResponse
             {
-                Message = $"找不到要編輯的資料。\n\n{BotMessages.MainMenuPrompt}"
+                Message = BotMessages.WithMainMenu("找不到要編輯的資料。")
             };
         }
         if (result.Status == EditResultStatus.Duplicate)
@@ -201,7 +198,7 @@ public class EditFlowHandler : IRequestHandler<EditFlowCommand, BotResponse>
 
         return new BotResponse
         {
-            Message = $"旅遊資訊修改成功。\n\n{BotMessages.MainMenuPrompt}"
+            Message = BotMessages.WithMainMenu("旅遊資訊修改成功。")
         };
     }
 
@@ -216,8 +213,7 @@ public class EditFlowHandler : IRequestHandler<EditFlowCommand, BotResponse>
         {
             return new BotResponse
             {
-                Message =
-                    "請輸入 繼續 或 返回主選單。"
+                Message = BotMessages.ContinueOrReturnPrompt
             };
         }
 
@@ -228,8 +224,7 @@ public class EditFlowHandler : IRequestHandler<EditFlowCommand, BotResponse>
 
             return new BotResponse
             {
-                Message =
-                    $"找不到待處理的修改資料，請重新操作。\n\n{BotMessages.MainMenuPrompt}"
+                Message = BotMessages.WithMainMenu("找不到待處理的修改資料，請重新操作。")
             };
         }
 
@@ -246,7 +241,7 @@ public class EditFlowHandler : IRequestHandler<EditFlowCommand, BotResponse>
 
             return new BotResponse
             {
-                Message = $"找不到要編輯的資料。\n\n{BotMessages.MainMenuPrompt}"
+                Message = BotMessages.WithMainMenu("找不到要編輯的資料。")
             };
         }
 
@@ -254,7 +249,7 @@ public class EditFlowHandler : IRequestHandler<EditFlowCommand, BotResponse>
 
         return new BotResponse
         {
-            Message = $"旅遊資訊修改成功。\n\n{BotMessages.MainMenuPrompt}"
+            Message = BotMessages.WithMainMenu("旅遊資訊修改成功。")
         };
     }
 }

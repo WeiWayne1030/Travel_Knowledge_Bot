@@ -49,7 +49,7 @@ public class DeleteFlowHandler : IRequestHandler<DeleteFlowCommand, BotResponse>
 
         return new BotResponse
         {
-            Message = "目前無法處理這個操作。"
+            Message = BotMessages.OperationNotSupported
         };
     }
 
@@ -67,7 +67,7 @@ public class DeleteFlowHandler : IRequestHandler<DeleteFlowCommand, BotResponse>
 
             return new BotResponse
             {
-                Message = $"目前沒有可以刪除的資料。\n\n{BotMessages.MainMenuPrompt}"
+                Message = BotMessages.NoItemsToProcess("刪除")
             };
         }
 
@@ -75,7 +75,7 @@ public class DeleteFlowHandler : IRequestHandler<DeleteFlowCommand, BotResponse>
         {
             return new BotResponse
             {
-                Message = "請輸入有效的項目編號。"
+                Message = BotMessages.InvalidItemNumber
             };
         }
 
@@ -83,8 +83,7 @@ public class DeleteFlowHandler : IRequestHandler<DeleteFlowCommand, BotResponse>
         {
             return new BotResponse
             {
-                Message =
-                    $"請輸入 1 到 {items.Count} 之間的項目編號。"
+                Message = BotMessages.ItemNumberOutOfRange(items.Count)
             };
         }
 
@@ -99,7 +98,7 @@ public class DeleteFlowHandler : IRequestHandler<DeleteFlowCommand, BotResponse>
         {
             Message =
                 $"確定要刪除「{selectedItem.Name}」嗎？\n" +
-                "請輸入 繼續 或 返回主選單。"
+                BotMessages.ContinueOrReturnPrompt
         };
     }
 
@@ -115,8 +114,7 @@ public class DeleteFlowHandler : IRequestHandler<DeleteFlowCommand, BotResponse>
         {
             return new BotResponse
             {
-                Message =
-                    "請輸入 繼續 或 返回主選單。"
+                Message = BotMessages.ContinueOrReturnPrompt
             };
         }
 
@@ -126,8 +124,7 @@ public class DeleteFlowHandler : IRequestHandler<DeleteFlowCommand, BotResponse>
 
             return new BotResponse
             {
-                Message =
-                    $"找不到要刪除的項目，操作已取消。\n\n{BotMessages.MainMenuPrompt}"
+                Message = BotMessages.WithMainMenu("找不到要刪除的項目，操作已取消。")
             };
         }
 
@@ -141,8 +138,7 @@ public class DeleteFlowHandler : IRequestHandler<DeleteFlowCommand, BotResponse>
 
             return new BotResponse
             {
-                Message =
-                    $"找不到這筆資料，可能已經被刪除。\n\n{BotMessages.MainMenuPrompt}"
+                Message = BotMessages.WithMainMenu("找不到這筆資料，可能已經被刪除。")
             };
         }
 
@@ -150,7 +146,7 @@ public class DeleteFlowHandler : IRequestHandler<DeleteFlowCommand, BotResponse>
 
         return new BotResponse
         {
-            Message = $"旅遊資訊刪除成功。\n\n{BotMessages.MainMenuPrompt}"
+            Message = BotMessages.WithMainMenu("旅遊資訊刪除成功。")
         };
     }
 }

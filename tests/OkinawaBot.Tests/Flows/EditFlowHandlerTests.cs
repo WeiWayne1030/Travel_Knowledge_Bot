@@ -81,7 +81,7 @@ public class EditFlowHandlerTests
             context.State);
 
         Assert.Equal(
-            "請輸入有效的項目編號。",
+            BotMessages.InvalidItemNumber,
             result.Message);
     }
 
@@ -112,7 +112,7 @@ public class EditFlowHandlerTests
             context.State);
 
         Assert.Equal(
-            "請輸入 1 到 1 之間的項目編號。",
+            BotMessages.ItemNumberOutOfRange(1),
             result.Message);
     }
 

@@ -87,7 +87,7 @@ public class ProcessMessageCommandHandler : IRequestHandler<ProcessMessageComman
             _stateManager.Reset(userId);
             response = new BotResponse
             {
-                Message = "已退出小幫手。"
+                Message = BotMessages.SleepNotice
             };
         }
         else if (_commandParser.Parse(message) == BotCommand.Return)
@@ -130,7 +130,7 @@ public class ProcessMessageCommandHandler : IRequestHandler<ProcessMessageComman
         {
             response = new BotResponse
             {
-                Message = "目前無法處理這個操作。"
+                Message = BotMessages.OperationNotSupported
             };
         }
 
@@ -155,7 +155,8 @@ public class ProcessMessageCommandHandler : IRequestHandler<ProcessMessageComman
                         $"【{context.CurrentDestination}】請輸入旅遊資訊：\n" +
                         "URL\n" +
                         "#類別\n" +
-                        "名稱"
+                        "名稱\n\n" +
+                        "（若要取消，請輸入「返回主選單」）"
                 };
 
             case BotCommand.Query:
@@ -210,7 +211,7 @@ public class ProcessMessageCommandHandler : IRequestHandler<ProcessMessageComman
                 _stateManager.Reset(userId);
                 return new BotResponse
                 {
-                    Message = "已退出小幫手。"
+                    Message = BotMessages.SleepNotice
                 };
 
             default:
@@ -231,7 +232,7 @@ public class ProcessMessageCommandHandler : IRequestHandler<ProcessMessageComman
         {
             return new BotResponse
             {
-                Message = "請輸入有效的地區名稱或號碼。"
+                Message = "請輸入有效的地區名稱或號碼，或輸入「返回主選單」取消。"
             };
         }
 
