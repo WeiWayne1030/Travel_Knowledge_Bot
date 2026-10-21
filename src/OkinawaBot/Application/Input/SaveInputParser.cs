@@ -39,6 +39,13 @@ public class SaveInputParser
                 "缺少 URL，請將 URL 放在 #分類 之前。");
         }
 
+        if (!Uri.TryCreate(beforeCategory, UriKind.Absolute, out var uriResult) ||
+            (uriResult.Scheme != Uri.UriSchemeHttp && uriResult.Scheme != Uri.UriSchemeHttps))
+        {
+            return SaveInputParseResult.Failure(
+                "URL 格式不正確，必須以 http:// 或 https:// 開頭。");
+        }
+
         if (string.IsNullOrWhiteSpace(afterCategory))
         {
             return SaveInputParseResult.Failure(

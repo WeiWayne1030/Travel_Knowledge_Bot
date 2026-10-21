@@ -62,7 +62,7 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// 自動套用資料庫 Migration (如果在 Zeabur 這種 Container 環境，重啟時會確保資料庫檔案和資料表存在)
+// 自動套用資料庫 Migration (如果在 NorthFlank 這種 Container 環境，重啟時會確保資料庫檔案和資料表存在)
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();

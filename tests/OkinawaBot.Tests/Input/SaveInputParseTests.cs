@@ -92,4 +92,23 @@ public class SaveInputParserTests
             "缺少名稱，請將名稱放在 #分類 之後。",
             result.ErrorMessage);
     }
+
+    // URL 格式無效 (非 http/https 或隨意字串)
+    [Theory]
+    [InlineData("not-a-valid-url #ATTRACTION 美麗海水族館")]
+    [InlineData("ftp://example.com/file #ATTRACTION 美麗海水族館")]
+    public void Parse_ShouldReturnFailure_WhenUrlIsInvalid(string input)
+    {
+        // Arrange
+        var parser = new SaveInputParser();
+
+        // Act
+        var result = parser.Parse(input);
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.Equal(
+            "URL 格式不正確，必須以 http:// 或 https:// 開頭。",
+            result.ErrorMessage);
+    }
 }

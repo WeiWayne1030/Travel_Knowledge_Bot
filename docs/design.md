@@ -98,7 +98,7 @@ OkinawaBot/
 │   └── Program.cs
 ├── tests/OkinawaBot.Tests/
 ├── docs/                    SRS.md, design.md, DEVLOG.md
-├── .github/workflows/       （目前為空，尚無 CI）
+├── .github/workflows/       dotnet.yml (GitHub Actions CI)
 ├── docker-compose.yml       okinawabot + redis
 ├── Dockerfile
 ├── OkinawaBot.sln
@@ -111,13 +111,13 @@ OkinawaBot/
 |------|------|
 | Idle | `旅遊小幫手` 喚醒 |
 | MainMenu | `儲存` / `查詢` / `編輯` / `刪除` / `切換地區`（或 `切換目的地`） |
-| SaveFlow | `URL #類別 名稱`（單行或多行；`#類別` 前為 URL、後為名稱） |
+| SaveFlow | `URL #類別 名稱`（單行或多行；`#類別` 前為 URL、後為名稱；URL 必須以 http:// 或 https:// 開頭） |
 | QueryFlow | 類別名稱（需與資料庫現有類別完全相符，限定目前地區） |
 | EditItemSelection / DeleteFlow | 項目編號（目前地區全部項目的 1-based 序號；進入流程時不會列出清單） |
-| EditDataInput | 單項或多項：`URL`、`#類別`、`名稱`，或 `網址:` / `類別:` / `名稱:` 前綴 |
+| EditDataInput | 單項或多項：`URL`、`#類別`、`名稱`，或 `網址:` / `類別:` / `名稱:` 前綴（URL 必須以 http:// 或 https:// 開頭） |
 | 各確認狀態 | `繼續` 或 `返回主選單` |
 
-驗證差異：Edit 會檢查 URL 必須為 http/https；Save 目前不驗證 URL 格式。
+URL 驗證：Save 與 Edit 均已實作 URL 合法 Scheme (http/https) 格式驗證。
 
 ## 5. SQLite 資料表
 

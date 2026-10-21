@@ -18,7 +18,7 @@ WORKDIR /app
 # 把階段 1 編譯好的檔案複製過來
 COPY --from=build /app/publish .
 
-# 設定 Zeabur 常用的 8080 Port 供外部存取
+# 設定 NorthFlank 常用的 8080 Port 供外部存取
 ENV ASPNETCORE_HTTP_PORTS=8080
 EXPOSE 8080
 

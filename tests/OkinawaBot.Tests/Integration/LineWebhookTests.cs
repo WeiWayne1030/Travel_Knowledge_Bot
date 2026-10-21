@@ -3,7 +3,7 @@ using System.Net.Http.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using OkinawaBot.Infrastructure.Data;
-using OkinawaBot.Models;
+using OkinawaBot.Infrastructure.Line;
 
 namespace OkinawaBot.Tests.Integration;
 
@@ -29,7 +29,7 @@ public class LineWebhookTests
         // Wake up bot
         var wakeRequest = new LineWebhookRequest
         {
-            Events = [ new LineEvent { Type = "message", ReplyToken = "token_wake", Source = new LineSource { UserId = userId }, Message = new LineMessage { Type = "text", Text = "旅遊小幫手" } } ]
+            Events = [ new LineWebhookEvent { Type = "message", ReplyToken = "token_wake", Source = new LineSource { UserId = userId }, Message = new LineMessage { Type = "text", Text = "旅遊小幫手" } } ]
         };
         await PostWebhookAsync(client, wakeRequest);
 
@@ -38,7 +38,7 @@ public class LineWebhookTests
         {
             Events =
             [
-                new LineEvent
+                new LineWebhookEvent
                 {
                     Type = "message", ReplyToken = "token_1", Source = new LineSource
                     {
@@ -68,7 +68,7 @@ public class LineWebhookTests
         {
             Events =
             [
-                new LineEvent
+                new LineWebhookEvent
                 {
                     Type = "message", ReplyToken = "token_2", Source = new LineSource
                     {
@@ -148,7 +148,7 @@ public class LineWebhookTests
         // Wake up bot
         var wakeRequest = new LineWebhookRequest
         {
-            Events = [ new LineEvent { Type = "message", ReplyToken = "token_wake2", Source = new LineSource { UserId = userId }, Message = new LineMessage { Type = "text", Text = "旅遊小幫手" } } ]
+            Events = [ new LineWebhookEvent { Type = "message", ReplyToken = "token_wake2", Source = new LineSource { UserId = userId }, Message = new LineMessage { Type = "text", Text = "旅遊小幫手" } } ]
         };
         await PostWebhookAsync(client, wakeRequest);
 
@@ -157,7 +157,7 @@ public class LineWebhookTests
         {
             Events =
             [
-                new LineEvent
+                new LineWebhookEvent
                 {
                     Type = "message", ReplyToken = "token_3", Source = new LineSource { UserId = userId },
                     Message = new LineMessage { Type = "text", Text = "查詢" }
@@ -173,7 +173,7 @@ public class LineWebhookTests
         {
             Events =
             [
-                new LineEvent
+                new LineWebhookEvent
                 {
                     Type = "message", ReplyToken = "token_4", Source = new LineSource { UserId = userId },
                     Message = new LineMessage { Type = "text", Text = "Shopping" }
@@ -221,7 +221,7 @@ public class LineWebhookTests
         // Wake up bot
         var wakeRequest = new LineWebhookRequest
         {
-            Events = [ new LineEvent { Type = "message", ReplyToken = "token_wake3", Source = new LineSource { UserId = userId }, Message = new LineMessage { Type = "text", Text = "旅遊小幫手" } } ]
+            Events = [ new LineWebhookEvent { Type = "message", ReplyToken = "token_wake3", Source = new LineSource { UserId = userId }, Message = new LineMessage { Type = "text", Text = "旅遊小幫手" } } ]
         };
         await PostWebhookAsync(client, wakeRequest);
 
@@ -230,7 +230,7 @@ public class LineWebhookTests
         {
             Events =
             [
-                new LineEvent
+                new LineWebhookEvent
                 {
                     Type = "message", ReplyToken = "token_5", Source = new LineSource { UserId = userId },
                     Message = new LineMessage { Type = "text", Text = "編輯" }
@@ -255,7 +255,7 @@ public class LineWebhookTests
         {
             Events =
             [
-                new LineEvent
+                new LineWebhookEvent
                 {
                     Type = "message", ReplyToken = "token_6", Source = new LineSource { UserId = userId },
                     Message = new LineMessage { Type = "text", Text = selectedIndex.ToString() }
@@ -273,7 +273,7 @@ public class LineWebhookTests
         {
             Events =
             [
-                new LineEvent
+                new LineWebhookEvent
                 {
                     Type = "message", ReplyToken = "token_7", Source = new LineSource { UserId = userId },
                     Message = new LineMessage { Type = "text", Text = $"https://example.com/new #NewCat {uniqueName}" }
@@ -328,7 +328,7 @@ public class LineWebhookTests
         // Wake up bot
         var wakeRequest = new LineWebhookRequest
         {
-            Events = [ new LineEvent { Type = "message", ReplyToken = "token_wake4", Source = new LineSource { UserId = userId }, Message = new LineMessage { Type = "text", Text = "旅遊小幫手" } } ]
+            Events = [ new LineWebhookEvent { Type = "message", ReplyToken = "token_wake4", Source = new LineSource { UserId = userId }, Message = new LineMessage { Type = "text", Text = "旅遊小幫手" } } ]
         };
         await PostWebhookAsync(client, wakeRequest);
 
@@ -337,7 +337,7 @@ public class LineWebhookTests
         {
             Events =
             [
-                new LineEvent
+                new LineWebhookEvent
                 {
                     Type = "message", ReplyToken = "token_8", Source = new LineSource { UserId = userId },
                     Message = new LineMessage { Type = "text", Text = "刪除" }
@@ -362,7 +362,7 @@ public class LineWebhookTests
         {
             Events =
             [
-                new LineEvent
+                new LineWebhookEvent
                 {
                     Type = "message", ReplyToken = "token_9", Source = new LineSource { UserId = userId },
                     Message = new LineMessage { Type = "text", Text = selectedIndex.ToString() }
@@ -378,7 +378,7 @@ public class LineWebhookTests
         {
             Events =
             [
-                new LineEvent
+                new LineWebhookEvent
                 {
                     Type = "message", ReplyToken = "token_10", Source = new LineSource { UserId = userId },
                     Message = new LineMessage { Type = "text", Text = "繼續" }
@@ -405,7 +405,7 @@ public class LineWebhookTests
         }
     }
     //把我們在測試設定的假密鑰 ("test_secret") 拿來，動態對假 Payload 進行 HMAC-SHA256 雜湊，並把產生的 Signature 塞入 Headers 裡，完美模擬真正的 LINE 伺服器行為。
-    private async System.Threading.Tasks.Task<System.Net.Http.HttpResponseMessage> PostWebhookAsync(System.Net.Http.HttpClient client, OkinawaBot.Models.LineWebhookRequest request)
+    private async System.Threading.Tasks.Task<System.Net.Http.HttpResponseMessage> PostWebhookAsync(System.Net.Http.HttpClient client, OkinawaBot.Infrastructure.Line.LineWebhookRequest request)
     {
         var json = System.Text.Json.JsonSerializer.Serialize(request, new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase });
         var content = new System.Net.Http.StringContent(json, System.Text.Encoding.UTF8, "application/json");

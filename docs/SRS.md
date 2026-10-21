@@ -403,11 +403,9 @@ Given multiple items match the selected category
 When the user performs the query
 Then the system SHALL return all matching items in a single message and end the Query flow (the conversation returns to Idle).
 
-FR-010 — Missing URL Handling
+FR-010 — Missing or Invalid URL Handling
 
-If the user submits an input without a URL, the system SHALL display an error message indicating that the URL is missing and that it must be placed before `#Category`.
-
-Current limitation: the Save flow does not validate the URL scheme or format; any non-empty text before `#Category` is accepted as the URL (the Edit flow does validate http/https).
+If the user submits an input without a valid URL or with an invalid URL format, the system SHALL display an error message and reject the input. The URL MUST use http:// or https://.
 
 Example:
 
@@ -716,7 +714,6 @@ The system SHALL integrate with the LINE Messaging API (webhook and reply API).
 
 ## 9. Future Enhancements
 
-- Validate URL scheme/format in the Save flow (FR-010).
 - Attach a complete valid input example to Save error messages (FR-012).
 - Display the numbered item list when entering the Edit and Delete flows.
 - Optional category whitelist or suggestions.
@@ -725,4 +722,4 @@ The system SHALL integrate with the LINE Messaging API (webhook and reply API).
 - Fetch page title (Open Graph) to prefill the name.
 - LINE group chat support and per-user data ownership.
 - Export saved items; notes/tags fields.
-- GitHub Actions CI (build and test) and automated deployment.
+- Automated deployment to cloud platforms (e.g. NorthFlank).

@@ -30,6 +30,7 @@
 | 17 | 2026-10-14 | `3a2bf2e` | 編輯流程彈性化重構 (任一欄位修改) | 實作 `EditInputParser` 與 `EditInputParseResult`，支援 URL、類別、名稱單一或多項自由修改；`UpdateTravelItemRequest` 改為 Nullable；`EditService` 支援局部更新並優化重複名稱檢查。 |
 | 18 | 2026-10-16 | `bc98fff` | 多目的地分區支援 (切換地區/國家) | TravelItem 增加 Destination 欄位並配置預設值與索引；ITravelItemRepository / Services 支援地區篩選；新增 SwitchDestination 狀態與「切換地區」指令。 |
 | 19 | 2026-10-16 | — | Redis 快取延長與流程逾時分級管理 | 將 Redis 快取延長至 1 天並保留地區偏好，加入 1 小時暫態流程逾時重置與提示機制；修補 DI 容器漏註冊與 EditInputParser URL 解析 Bug，98 測試全數通過。 |
+| 20 | 2026-10-21 | — | 技術債清理與品質強化 | 建立 GitHub Actions CI 自動化測試建置流程；移除 Application/Models 下重複的 LineWebhookRequest；為 SaveInputParser 補齊 URL http/https 格式驗證與單元測試。 |
 ---
 
 ## 📌 各階段詳細紀錄
@@ -234,7 +235,7 @@
   - 移除該後門，並改在整合測試 `LineWebhookTests.cs` 中，利用測試用密鑰 `"test_secret"` 動態算出真實的 HMAC-SHA256 簽章並送出請求，以 100% 真實情境通過驗證。
 - **結果**：正式環境的程式碼達到了 100% Clean Code，且 64 個整合/單元測試依然順利通過。
 
-### Phase 15 — 流程優化與中文化體驗（`e375d38`）
+### Phase 15 — 流程優化與中文化體驗（`c6a97cd`）
 
 **目標**：優化使用者體驗，讓機器人更貼近中文語境，並且增加進入選單的防呆機制。
 
@@ -349,6 +350,18 @@
     - 於 `MessageHandlerTests` 增加流程逾時自動重置提示與直接重新喚醒之整合測試。
     - 現有 98 項單元與整合測試全數通過（`Passed: 98, Failed: 0`）。
 
+### Phase 20 — 技術債清理與品質強化（2026-10-21）
+
+**目標**：清理專案中重複冗餘的類別模型、強化儲存流程的 URL 格式校驗，並導入 GitHub Actions CI 機制。
+
+- **建立 CI/CD 自動化工作流程**：
+  - 於 `.github/workflows/dotnet.yml` 建立標準 GitHub Actions CI 流程，在 `main` 分支的 push 與 PR 時自動執行 `dotnet restore`、`dotnet build` 與 `dotnet test`。
+- **清除重複的 Webhook 模型**：
+  - 廢棄 `Application/Models/LineWebhookRequest.cs`，整合測試（`LineWebhookTests.cs`）全數統一使用正式的 `OkinawaBot.Infrastructure.Line.LineWebhookRequest` 與 `LineWebhookEvent`。
+- **完善 SaveFlow 的 URL 格式校驗**：
+  - 原先 `SaveInputParser` 僅檢查 URL 字串是否存在，未檢查 Scheme 與格式；現已補齊 `Uri.TryCreate` 與 http/https 協定檢查，與 `EditInputParser` 一致。
+  - 於 `SaveInputParseTests.cs` 補上無效與非 http/https URL 之單元測試。
+
 ---
 
 ## ✅ SRS 需求實作進度
@@ -364,7 +377,7 @@
 | FR-007 | 使用者自訂分類 | ✅ 已完成（直接採用使用者輸入） |
 | FR-008 | 顯示可查詢分類 | ✅ 已完成（動態列出目前地區資料庫現有分類，無固定白名單） |
 | FR-009 | 依分類查詢 | ✅ 已完成 |
-| FR-010 | 缺 URL 的處理 | 🟡 有檢查缺少；Save 不驗證 URL 格式（Edit 會驗證 http/https） |
+| FR-010 | 缺 URL 或格式無效的處理 | ✅ 已完成（檢查缺少與 http/https 格式驗證） |
 | FR-011 | 缺 Category 的處理 | ✅ 已完成 |
 | FR-012 | 輸入格式錯誤的處理 | 🟡 有錯誤訊息，但沒有附上正確格式範例 |
 | FR-013 | 缺 Name 的處理 | ✅ 已完成 |
@@ -379,15 +392,10 @@
 
 ## 🧹 已知問題與技術債
 
-- `.github/workflows/` 目錄是空的，還沒有 CI。
-- 時間軸 #9 與 #15 的 Commit 皆記為 `e375d38`，其中一筆 hash 有誤，需用 `git log` 核對；#19 尚未填入 Commit。
-- Save 流程不驗證 URL 格式（僅 Edit 流程驗證 http/https）。
 - Save 錯誤訊息未附完整 `URL #類別 名稱` 範例（僅進入 Save 流程時顯示）。
 - 進入「編輯／刪除」流程時不會列出項目清單，使用者需自行猜測編號（編號為目前地區全部項目的序號）。
-- 資料不綁定 LINE 使用者，且 Controller 只使用 `Source.UserId`，群組聊天不受支援。
 - 完成流程後狀態回到 `Idle`（不是主選單），需重新輸入「旅遊小幫手」。
 - 各 FlowHandler 內的 `BotCommand.Return` 分支已被全域攔截，不會被執行，可清除。
-- `LineWebhookRequest` 在 `Application/Models` 與 `Infrastructure/Line` 各有一份重複類別。
 
 ---
 
