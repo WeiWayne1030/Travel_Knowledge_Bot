@@ -479,8 +479,7 @@ AC-012-02
 
 Given the input format is invalid
 When the system displays the error message
-Then the system SHALL provide a hint on how to fix the input (e.g. `缺少分類，請使用 #分類 格式，例如 #Attraction。`).
-(Current limitation: no complete valid input example is attached to the error message.)
+Then the system SHALL provide a hint on how to fix the input and attach an example of a valid input format.
 
 FR-013 — Missing Name Handling
 

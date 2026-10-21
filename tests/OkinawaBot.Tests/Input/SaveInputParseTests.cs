@@ -48,8 +48,11 @@ public class SaveInputParserTests
 
         // Assert
         Assert.False(result.IsSuccess);
-        Assert.Equal(
+        Assert.Contains(
             "缺少分類，請使用 #分類 格式，例如 #Attraction。",
+            result.ErrorMessage);
+        Assert.Contains(
+            "正確格式範例：",
             result.ErrorMessage);
     }
 
@@ -68,8 +71,11 @@ public class SaveInputParserTests
 
         // Assert
         Assert.False(result.IsSuccess);
-        Assert.Equal(
+        Assert.Contains(
             "缺少 URL，請將 URL 放在 #分類 之前。",
+            result.ErrorMessage);
+        Assert.Contains(
+            "正確格式範例：",
             result.ErrorMessage);
     }
 
@@ -88,8 +94,11 @@ public class SaveInputParserTests
 
         // Assert
         Assert.False(result.IsSuccess);
-        Assert.Equal(
+        Assert.Contains(
             "缺少名稱，請將名稱放在 #分類 之後。",
+            result.ErrorMessage);
+        Assert.Contains(
+            "正確格式範例：",
             result.ErrorMessage);
     }
 
@@ -107,8 +116,11 @@ public class SaveInputParserTests
 
         // Assert
         Assert.False(result.IsSuccess);
-        Assert.Equal(
+        Assert.Contains(
             "URL 格式不正確，必須以 http:// 或 https:// 開頭。",
+            result.ErrorMessage);
+        Assert.Contains(
+            "正確格式範例：",
             result.ErrorMessage);
     }
 }

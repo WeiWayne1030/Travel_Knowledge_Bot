@@ -4,12 +4,14 @@ namespace OkinawaBot.Application.Input;
 
 public class SaveInputParser
 {
+    private const string FormatExample = "\n\n正確格式範例：\nhttps://example.com #美食 燒肉乃我那霸";
+
     public SaveInputParseResult Parse(string input)
     {
         if (string.IsNullOrWhiteSpace(input))
         {
             return SaveInputParseResult.Failure(
-                "輸入內容不可以是空的。");
+                "輸入內容不可以是空的。" + FormatExample);
         }
 
         var categoryMatch =
@@ -20,7 +22,7 @@ public class SaveInputParser
         if (!categoryMatch.Success)
         {
             return SaveInputParseResult.Failure(
-                "缺少分類，請使用 #分類 格式，例如 #Attraction。");
+                "缺少分類，請使用 #分類 格式，例如 #Attraction。" + FormatExample);
         }
 
         var category =
@@ -36,20 +38,20 @@ public class SaveInputParser
         if (string.IsNullOrWhiteSpace(beforeCategory))
         {
             return SaveInputParseResult.Failure(
-                "缺少 URL，請將 URL 放在 #分類 之前。");
+                "缺少 URL，請將 URL 放在 #分類 之前。" + FormatExample);
         }
 
         if (!Uri.TryCreate(beforeCategory, UriKind.Absolute, out var uriResult) ||
             (uriResult.Scheme != Uri.UriSchemeHttp && uriResult.Scheme != Uri.UriSchemeHttps))
         {
             return SaveInputParseResult.Failure(
-                "URL 格式不正確，必須以 http:// 或 https:// 開頭。");
+                "URL 格式不正確，必須以 http:// 或 https:// 開頭。" + FormatExample);
         }
 
         if (string.IsNullOrWhiteSpace(afterCategory))
         {
             return SaveInputParseResult.Failure(
-                "缺少名稱，請將名稱放在 #分類 之後。");
+                "缺少名稱，請將名稱放在 #分類 之後。" + FormatExample);
         }
 
         return SaveInputParseResult.Success(

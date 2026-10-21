@@ -113,8 +113,11 @@ public class SaveFlowHandlerTests
             ConversationState.SaveFlow,
             context.State);
 
-        Assert.Equal(
+        Assert.Contains(
             "缺少分類，請使用 #分類 格式，例如 #Attraction。",
+            response.Message);
+        Assert.Contains(
+            "正確格式範例：",
             response.Message);
     }
 
