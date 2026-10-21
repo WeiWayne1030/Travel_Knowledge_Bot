@@ -42,7 +42,7 @@ stateDiagram-v2
 | 指令 | 行為 |
 |------|------|
 | `返回主選單` | `ResetToMainMenu`（清除 CurrentItemId / PendingSave / PendingEdit，保留目的地）→ `MainMenu`，並重新顯示喚醒提示 |
-| `再見小幫手` | `Reset` → `Idle`，回覆「已退出小幫手。」 |
+| `再見小幫手` | `Reset` → `Idle`，回覆「已退出小幫手。若要再次使用，請輸入「旅遊小幫手」。」（`BotMessages.SleepNotice`） |
 
 ### 逾時與連續操作
 
@@ -83,7 +83,7 @@ OkinawaBot/
 │   │   ├── Flows/           Save/Query/Edit/DeleteFlowHandler
 │   │   ├── Input/           SaveInputParser, EditInputParser
 │   │   ├── Services/        Save/Query/Edit/DeleteService
-│   │   ├── Models/          BotResponse, SaveResult, EditResult, 各種 Request/ParseResult DTO
+│   │   ├── Models/          BotResponse, BotMessages, SaveResult, EditResult, 各種 Request/ParseResult DTO
 │   │   └── States/          ConversationState, ConversationContext, ConversationStateManager
 │   ├── Domain/
 │   │   ├── Entities/        TravelItem
@@ -117,6 +117,23 @@ OkinawaBot/
 | 各確認狀態 | `繼續` 或 `返回主選單` |
 
 URL 驗證：Save 與 Edit 均已實作 URL 合法 Scheme (http/https) 格式驗證。
+
+### 回覆訊息與下一步提示（`BotMessages`）
+
+每則回覆都要讓使用者知道下一步該做什麼（SRS BR-036）。跨流程重複使用的文字集中在 `Application/Models/BotMessages.cs`；只在單一流程使用的文字（例如編輯修改說明、Parser 錯誤訊息）留在原處。
+
+| 成員 | 用途 |
+|------|------|
+| `MainMenuPrompt` | 主選單指令提示 |
+| `InvalidItemNumber` / `ItemNumberOutOfRange(max)` | 編輯／刪除選號錯誤，附「或輸入『返回主選單』」 |
+| `ContinueOrReturnPrompt` | 確認狀態提示「請輸入 繼續 或 返回主選單。」 |
+| `SleepNotice` | 退出小幫手，附重新喚醒方式 |
+| `OperationNotSupported` | 無法處理的操作，附 `返回主選單` / `旅遊小幫手` |
+| `WithMainMenu(msg)` | 流程完成：`msg` + 「已回到主選單。」+ 主選單提示 |
+| `WithRetryHint(msg)` | 輸入錯誤留在原流程：`msg` + 「請重新輸入，或輸入『返回主選單』。」 |
+| `NoItemsToProcess(action)` | 編輯／刪除時沒有資料，並回主選單 |
+
+提取原則：同一段文字出現 2 處以上才放進 `BotMessages`。
 
 ## 5. SQLite 資料表
 

@@ -199,11 +199,20 @@ When the system receives `Return`, it SHALL discard the current operation state 
 
 BR-034
 
-The system SHALL also accept `再見小幫手` in any non-Idle state; it SHALL reset the conversation to Idle and reply `已退出小幫手。`.
+The system SHALL also accept `再見小幫手` in any non-Idle state; it SHALL reset the conversation to Idle and reply `已退出小幫手。若要再次使用，請輸入「旅遊小幫手」。`.
 
 BR-035
 
 When a Save, Edit or Delete flow completes successfully, or a Query returns results, the conversation SHALL return to the Main Menu with a menu prompt to allow continuous operations without re-entering `旅遊小幫手`. If the user remains inactive in the Main Menu (or any non-Idle state) for more than 10 minutes, the conversation automatically times out and resets to Idle.
+
+BR-036
+
+Every bot reply SHALL tell the user what to do next:
+
+- When a flow finishes and the conversation returns to the Main Menu, the reply SHALL state `已回到主選單。` followed by the Main Menu prompt.
+- When the user stays in a flow after invalid input (empty input, wrong format, invalid or out-of-range item number, no matching category, save failure), the reply SHALL explain the problem and tell the user to re-enter or enter `返回主選單`.
+- When a flow asks the user for free-form input (Save, Edit data input), the prompt SHALL mention that `返回主選單` cancels the operation.
+- When the user exits with `再見小幫手`, or sends an input the system cannot handle, the reply SHALL tell the user how to restart (`旅遊小幫手`) or return (`返回主選單`).
 
 Acceptance Criteria
 
