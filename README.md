@@ -106,11 +106,11 @@ dotnet run
 
 ---
 
-## ☁️ 部署指南 (Deployment - Zeabur)
+## ☁️ 部署指南 (Deployment - NorthFlank)
 
-本專案支援一鍵部署至容器化雲端平台，如 [Zeabur](https://zeabur.com/)。由於 SQLite 是以單一檔案 (`okinawa.db`) 形式存在，請務必按照以下步驟設定**持久化儲存空間 (Persistent Volume)**，避免重新部署時遺失資料：
+本專案支援一鍵部署至容器化雲端平台，如 [NorthFlank](https://northflank.com/)。由於 SQLite 是以單一檔案 (`okinawa.db`) 形式存在，請務必按照以下步驟設定**持久化儲存空間 (Persistent Volume)**，避免重新部署時遺失資料：
 
-1. 在 Zeabur 建立一個新專案並透過 GitHub 部署本服務。
+1. 在 NorthFlank 建立一個新專案並透過 GitHub 部署本服務。
 2. 點入您的 `OkinawaBot` 服務，前往 **Volume (儲存空間)** 設定分頁。
 3. 點擊新增 Volume，並設定 **Mount Path (掛載路徑)** 為：`/app/data`。
 4. 前往 **Variables (環境變數)** 設定分頁，新增資料庫連線字串，將原本預設的本機路徑指向剛才掛載的目錄：
@@ -118,9 +118,9 @@ dotnet run
    - **Value**: `Data Source=/app/data/okinawa.db`
 5. 設定完成後重新部署 (Redeploy)，您的資料庫就會安穩地保存在雲端硬碟中。
 
-另外，如果需要 Redis 保存對話狀態，也可以在 Zeabur 新增一個 Redis 服務，並在變數加入：
+另外，如果需要 Redis 保存對話狀態，也可以在 NorthFlank 建立一個 Redis 服務，並在變數加入：
 - **Key**: `ConnectionStrings__RedisConnection`
-- **Value**: `<Zeabur 提供的 Redis 連線字串>`
+- **Value**: `<NorthFlank 提供的 Redis 連線字串>`
 
 ---
 

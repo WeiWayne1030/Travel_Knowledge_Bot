@@ -4,7 +4,7 @@
 ## 1. Introduction
 Okinawa Travel Knowledge Bot is a personal travel information management system integrated with LINE.
 
-The system allows users to save travel-related URLs through LINE, automatically classify the information using AI, and search previously saved travel information.
+The system allows users to save travel-related URLs through LINE with a user-specified category, and to query, edit and delete previously saved travel information. Information is organized by destination (default: 沖繩) and category.
 
 ## 2. Problem Statement
 The user currently stores Okinawa travel information by sending URLs to a LINE group.
@@ -22,10 +22,10 @@ As the number of saved URLs increases, it becomes difficult to:
 The system aims to:
 
 1. Allow users to save travel URLs through LINE.
-2. Automatically classify saved travel information.
-3. Extract useful metadata from saved URLs.
-4. Allow users to search saved information.
-5. Organize travel information into structured categories.
+2. Organize saved travel information by user-defined categories.
+3. Store the URL, name, category and destination of each travel item.
+4. Allow users to query saved information by category within the current destination.
+5. Allow users to edit and delete saved information, and to switch between destinations.
 6. Reduce the effort required to manually organize travel information.
 
 ## 4. Scope
@@ -35,40 +35,44 @@ The MVP includes:
 
 - Receiving messages from LINE.
 - Detecting URLs in messages.
-- Extracting basic information from URLs.
-- Automatically classifying travel information.
+- Parsing the URL, name and category from the user's input.
+- Switching between destinations (e.g. 沖繩, 東京, 首爾).
 - Allowing users to specify a category manually.
 - Storing travel information.
-- Searching saved travel information.
-- Viewing saved travel information.
+- Querying saved travel information by category.
+- Editing and deleting saved travel information.
+- Conversation timeout handling and persistent conversation state (Redis).
 
 ### 4.2 Out of Scope
 
 The MVP does not include:
 
+- AI-based classification or automatic metadata extraction from URLs.
+- Keyword search across categories.
 - Automatic itinerary generation.
 - Hotel or restaurant reservations.
 - Navigation.
 - Real-time travel recommendations.
-- Multi-user collaboration.
+- Multi-user collaboration and LINE group chat support. Conversation state is keyed by the LINE `userId`; saved travel items are not linked to a user, so all users of the same deployment share the same data.
 - Mobile applications.
 - A dedicated web frontend.
 - Advanced recommendation algorithms.
 ## 5. Users
 ### 5.1 Personal User
 
-The system is initially designed for a single personal user who collects and organizes travel information through LINE.
+The system is initially designed for a single personal user who collects and organizes travel information through LINE one-on-one chat.
 
 ## 6. Functional Requirements
 FR-001 — Bot Activation and Main Menu
 
-The system SHALL provide a bot activation mechanism. When the user activates the bot by typing `旅遊小幫手`, the system SHALL display a welcome message and the available commands. The user can also type `再見小幫手` to deactivate the bot.
+The system SHALL provide a bot activation mechanism. While the bot is inactive (Idle), the system SHALL ignore all messages (no reply) except `旅遊小幫手`. When the user activates the bot by typing `旅遊小幫手`, the system SHALL display a welcome message that includes the current destination and the available commands. The user can type `再見小幫手` in any state to deactivate the bot.
 
 Available commands:
 - 儲存 (Save)
 - 查詢 (Query)
 - 編輯 (Edit)
 - 刪除 (Delete)
+- 切換地區 / 切換目的地 (Switch Destination)
 
 Acceptance Criteria
 
@@ -84,11 +88,11 @@ AC-001-02
 
 Given the bot has been activated
 When the welcome message is displayed
-Then the system SHALL provide the available commands: Save, Query, Edit and Delete.
+Then the system SHALL provide the available commands: Save, Query, Edit, Delete and Switch Destination, and SHALL show the current destination.
 
 FR-002 — Command Selection
 
-The system SHALL allow the user to select an operation from the Main Menu by entering one of the supported commands: 儲存, 查詢, 編輯, or 刪除.
+The system SHALL allow the user to select an operation from the Main Menu by entering one of the supported commands: 儲存, 查詢, 編輯, 刪除, or 切換地區 (alias 切換目的地). Any other input in the Main Menu SHALL cause the system to display the list of supported commands.
 
 The user SHALL be able to select one of these functions.
 
@@ -97,7 +101,7 @@ Business Rules
 <!-- 第一版先只支援增刪改查-->
 BR-001
 
-The system SHALL support the 儲存, 查詢, 編輯 and 刪除 functions in the initial version.
+The system SHALL support the 儲存, 查詢, 編輯, 刪除 and 切換地區 functions in the initial version.
 
 BR-002
 
@@ -127,6 +131,12 @@ AC-002-04
 Given the user has activated the bot
 When the user selects 刪除
 Then the system SHALL enter the Delete flow.
+
+AC-002-05
+
+Given the user has activated the bot
+When the user selects 切換地區
+Then the system SHALL enter the Switch Destination flow (see FR-017).
 
 FR-003 — Conversation State Management
 
@@ -185,7 +195,15 @@ The `Return` command SHALL be available in all interactive states except the Mai
 
 BR-004
 
-When the system receives `Return`, it SHALL discard the current operation state and return the user to the Main Menu.
+When the system receives `Return`, it SHALL discard the current operation state (current item, pending save and pending edit), keep the current destination, return the user to the Main Menu and re-display the welcome message.
+
+BR-034
+
+The system SHALL also accept `再見小幫手` in any non-Idle state; it SHALL reset the conversation to Idle and reply `已退出小幫手。`.
+
+BR-035
+
+When a Save, Edit or Delete flow completes (success or failure), or a Query returns results, the conversation SHALL return to Idle. The user needs to type `旅遊小幫手` again to continue.
 
 Acceptance Criteria
 
@@ -275,7 +293,7 @@ AC-006-03
 
 Given the item has been successfully stored
 When the save operation is completed
-Then the system SHALL notify the user that the item was successfully saved.
+Then the system SHALL notify the user that the item was successfully saved and SHALL store the item under the current destination.
 
 FR-007 — User-Defined Category
 
@@ -327,11 +345,11 @@ Business Rules
 
 BR-013
 
-The displayed categories SHALL be limited to categories supported by the system.
+The displayed categories SHALL be the distinct categories already stored in the database for the current destination. There is no fixed category whitelist.
 
 BR-014
 
-The Query flow SHALL only allow the user to query supported categories.
+The Query flow SHALL match the entered category text against the stored categories of the current destination. A category that has no stored items yields the no-match message.
 Acceptance Criteria
 
 AC-008-01
@@ -350,7 +368,7 @@ FR-009 — Query Travel Information by Category
 
 The system SHALL retrieve and return travel information based on the category selected by the user.
 
-The returned information SHALL include the stored name, category and corresponding URL.
+The returned information SHALL include the current destination, the selected category (in the result header), and the stored name and URL of each item, numbered from 1.
 
 Business Rules
 
@@ -364,7 +382,7 @@ The system SHALL return the name and URL associated with each matching item.
 
 BR-017
 
-If no items exist for the selected category, the system SHALL notify the user that no matching items were found.
+If no items exist for the selected category in the current destination, the system SHALL notify the user that no matching items were found, SHALL ask the user to re-enter a category, and SHALL remain in the Query flow.
 Acceptance Criteria
 
 AC-009-01
@@ -383,11 +401,13 @@ AC-009-03
 
 Given multiple items match the selected category
 When the user performs the query
-Then the system SHALL return all matching items according to the system's result display rules.
+Then the system SHALL return all matching items in a single message and end the Query flow (the conversation returns to Idle).
 
 FR-010 — Missing URL Handling
 
-If the user submits an input without a valid URL, the system SHALL display an error message and provide the expected input format.
+If the user submits an input without a URL, the system SHALL display an error message indicating that the URL is missing and that it must be placed before `#Category`.
+
+Current limitation: the Save flow does not validate the URL scheme or format; any non-empty text before `#Category` is accepted as the URL (the Edit flow does validate http/https).
 
 Example:
 
@@ -410,7 +430,8 @@ AC-010-02
 
 Given the URL is missing
 When the system displays the error message
-Then the system SHALL provide an example of the expected URL #Category Name input format.
+Then the system SHALL tell the user to place the URL before #Category.
+(Current limitation: the full `URL #Category Name` example is shown when entering the Save flow, not in this error message.)
 
 FR-011 — Missing Category Handling
 
@@ -460,7 +481,8 @@ AC-012-02
 
 Given the input format is invalid
 When the system displays the error message
-Then the system SHALL provide an example of a valid input format.
+Then the system SHALL provide a hint on how to fix the input (e.g. `缺少分類，請使用 #分類 格式，例如 #Attraction。`).
+(Current limitation: no complete valid input example is attached to the error message.)
 
 FR-013 — Missing Name Handling
 
@@ -488,17 +510,21 @@ Then the system SHALL request the user to provide a name.
 
 FR-014 — Edit Travel Information
 
-The system SHALL allow the user to select a saved item and update its URL, name or category.
+The system SHALL allow the user to select a saved item by its number (within the current destination) and update its URL, name or category. The user MAY change any single field or any combination of fields; omitted fields keep their original values. Optional field prefixes are supported: `名稱:`, `類別:` / `分類:`, `網址:` / `URL:`.
 
 Business Rules
 
 BR-023
 
-The system SHALL identify the saved item selected by the user from the query results.
+The system SHALL identify the saved item selected by the user by its 1-based number in the list of all saved items of the current destination. Note: the list itself is not displayed when entering the Edit flow.
 
 BR-024
 
-The system SHALL validate updated values using the same requirements as a Save request before storing the changes.
+The system SHALL validate updated values before storing the changes: a provided URL MUST use http:// or https://, a category MUST NOT be empty (`#` alone is rejected), and at least one field MUST be provided.
+
+BR-036
+
+If a new name different from the original already exists in the current destination, the system SHALL ask the user to enter `繼續` to save anyway or `返回主選單` to cancel.
 
 Acceptance Criteria
 
@@ -522,7 +548,7 @@ Business Rules
 
 BR-025
 
-The system SHALL request confirmation before permanently deleting a saved item.
+The system SHALL select the item by its 1-based number in the list of all saved items of the current destination (the list is not displayed in the flow), and SHALL request confirmation by asking the user to enter `繼續` before permanently deleting it. Any other input re-displays the prompt; `返回主選單` cancels.
 
 BR-026
 
@@ -540,15 +566,15 @@ AC-015-02
 
 Given the user is asked to confirm deletion
 When the user cancels
-Then the system SHALL keep the item and notify the user that deletion was cancelled.
+Then the system SHALL keep the item (the user returns to the Main Menu via 返回主選單).
 
 FR-016 — Duplicate Name Confirmation
 
-When the user submits a Save request with a name that matches an existing saved item, the system SHALL warn the user that the name is already in use and ask the user to confirm whether to continue saving.
+When the user submits a Save request with a name that matches an existing saved item in the same destination, the system SHALL warn the user that the name is already in use and ask the user to confirm whether to continue saving. The same name MAY exist in different destinations without a warning.
 
 The user SHALL respond with one of the following commands:
--繼續 (Continue)
--返回主選單 (Return)
+- 繼續 (Continue)
+- 返回主選單 (Return)
 
 Business Rules
 
@@ -580,7 +606,7 @@ AC-016-02
 
 Given the system is waiting for duplicate-name confirmation
 When the user enters 繼續
-Then the system SHALL save the item, notify the user that the item was successfully saved and return the user to the Main Menu.
+Then the system SHALL save the item and notify the user that the item was successfully saved (the conversation returns to Idle).
 
 AC-016-03
 
@@ -600,13 +626,79 @@ Given no item with the submitted name exists
 When the user submits a valid Save request
 Then the system SHALL save the item without displaying a duplicate-name warning.
 
+FR-017 — Switch Destination
+
+The system SHALL allow the user to switch the current destination by entering `切換地區` (alias `切換目的地`) in the Main Menu. The system SHALL list the destinations already stored in the database and accept either the list number or a free-text new destination name. The default destination is `沖繩`.
+
+Business Rules
+
+BR-037
+
+The current destination SHALL be shown in the welcome message and in the Save, Query, Edit and Delete prompts.
+
+BR-038
+
+Save, Query, Edit, Delete, category listing and duplicate-name checks SHALL be limited to the current destination.
+
+BR-039
+
+The current destination SHALL be preserved when the conversation is reset or returned to the Main Menu.
+
+Acceptance Criteria
+
+AC-017-01
+
+Given the user is in the Main Menu
+When the user enters 切換地區
+Then the system SHALL display the current destination, the stored destinations (numbered) and ask for a number or a new name.
+
+AC-017-02
+
+Given the user is in the Switch Destination flow
+When the user enters a valid list number or a new name
+Then the system SHALL set the current destination, confirm the change and return to the Main Menu.
+
+FR-018 — Flow Timeout
+
+The system SHALL reset any non-Idle conversation that has been inactive for more than 1 hour.
+
+Business Rules
+
+BR-040
+
+When a timed-out conversation receives `旅遊小幫手`, the system SHALL reset the flow and immediately return to the Main Menu with the previous destination preserved.
+
+BR-041
+
+When a timed-out conversation receives any other message, the system SHALL reset the flow and reply `先前的操作已逾時並已重置，請輸入「旅遊小幫手」開始。`.
+
+FR-019 — LINE Webhook
+
+The system SHALL expose `POST /api/LineWebhook` to receive LINE Messaging API events.
+
+Business Rules
+
+BR-042
+
+The system SHALL verify the `X-Line-Signature` header (HMAC-SHA256 with the channel secret) and respond with HTTP 401 if invalid.
+
+BR-043
+
+The system SHALL process only text message events and SHALL reply through the LINE reply API. Empty responses (e.g. messages received while Idle) SHALL NOT be replied to.
+
 ## 7. Non-Functional Requirements
 
 NFR-001 — State Persistence
-The system SHALL maintain user conversation states across restarts by utilizing a distributed cache (Redis).
+The system SHALL maintain user conversation states across restarts by utilizing a distributed cache (Redis). Conversation state (including the current destination) SHALL expire after 1 day of inactivity (sliding expiration).
 
 NFR-002 — Data Persistence
 The system SHALL ensure that SQLite database files and Redis states survive container restarts by using persistent volumes.
+
+NFR-003 — Database Migration
+The system SHALL automatically apply pending EF Core migrations at startup.
+
+NFR-004 — Configuration
+The LINE channel secret and access token, SQLite and Redis connection strings SHALL be provided through configuration (`appsettings.json` or environment variables).
 
 ## 8. Constraints
 
@@ -619,4 +711,18 @@ The application SHALL be containerized and orchestrated using Docker Compose.
 CON-003 — Database
 The primary relational data store SHALL be SQLite.
 
+CON-004 — Messaging Platform
+The system SHALL integrate with the LINE Messaging API (webhook and reply API).
+
 ## 9. Future Enhancements
+
+- Validate URL scheme/format in the Save flow (FR-010).
+- Attach a complete valid input example to Save error messages (FR-012).
+- Display the numbered item list when entering the Edit and Delete flows.
+- Optional category whitelist or suggestions.
+- Keyword search across categories and fields.
+- LINE Flex Message / Quick Reply for queries and confirmations; pagination for long results.
+- Fetch page title (Open Graph) to prefill the name.
+- LINE group chat support and per-user data ownership.
+- Export saved items; notes/tags fields.
+- GitHub Actions CI (build and test) and automated deployment.

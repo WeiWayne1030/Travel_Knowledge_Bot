@@ -2,7 +2,7 @@
 
 本文件記錄 **Okinawa Travel Knowledge Bot** 從需求分析到實作的開發歷程，方便日後回顧設計決策、追蹤進度與規劃下一步。
 
-> 最後更新：2026-10-16
+> 最後更新：2026-10-21
 > 分支：`main`（遠端 `origin/main`）
 
 ---
@@ -362,31 +362,41 @@
 | FR-005 | 解析 URL / Name / Category | ✅ 已完成（格式 `URL #Category Name`，BR-030） |
 | FR-006 | 儲存旅遊資訊 | ✅ 已完成 |
 | FR-007 | 使用者自訂分類 | ✅ 已完成（直接採用使用者輸入） |
-| FR-008 | 顯示可查詢分類 | ✅ 已完成 |
+| FR-008 | 顯示可查詢分類 | ✅ 已完成（動態列出目前地區資料庫現有分類，無固定白名單） |
 | FR-009 | 依分類查詢 | ✅ 已完成 |
-| FR-010 | 缺 URL 的處理 | 🟡 有檢查缺少，但不驗證 URL 格式 |
+| FR-010 | 缺 URL 的處理 | 🟡 有檢查缺少；Save 不驗證 URL 格式（Edit 會驗證 http/https） |
 | FR-011 | 缺 Category 的處理 | ✅ 已完成 |
 | FR-012 | 輸入格式錯誤的處理 | 🟡 有錯誤訊息，但沒有附上正確格式範例 |
 | FR-013 | 缺 Name 的處理 | ✅ 已完成 |
 | FR-014 | 編輯 | ✅ 已完成（支援 URL、類別、名稱任一單獨修改或多項組合修改，包含重複名稱確認） |
 | FR-015 | 刪除 | ✅ 已完成（包含確認流程） |
 | FR-016 | 名稱重複確認 | ✅ 已完成（繼續 / 返回主選單 確認流程） |
-| — | LINE Webhook 串接 | ✅ 已完成（`LineWebhookController` 支援 HMAC-SHA256 簽章驗證、MediatR 轉發與 LINE 回覆 API） |
+| FR-017 | 切換地區 | ✅ 已完成（`切換地區` / `切換目的地`，資料依地區隔離） |
+| FR-018 | 流程逾時 | ✅ 已完成（非 Idle 超過 1 小時自動重置，Redis 1 天過期） |
+| FR-019 / — | LINE Webhook 串接 | ✅ 已完成（`LineWebhookController` 支援 HMAC-SHA256 簽章驗證、MediatR 轉發與 LINE 回覆 API） |
 
 ---
 
 ## 🧹 已知問題與技術債
 
 - `.github/workflows/` 目錄是空的，還沒有 CI。
+- 時間軸 #9 與 #15 的 Commit 皆記為 `e375d38`，其中一筆 hash 有誤，需用 `git log` 核對；#19 尚未填入 Commit。
+- Save 流程不驗證 URL 格式（僅 Edit 流程驗證 http/https）。
+- Save 錯誤訊息未附完整 `URL #類別 名稱` 範例（僅進入 Save 流程時顯示）。
+- 進入「編輯／刪除」流程時不會列出項目清單，使用者需自行猜測編號（編號為目前地區全部項目的序號）。
+- 資料不綁定 LINE 使用者，且 Controller 只使用 `Source.UserId`，群組聊天不受支援。
+- 完成流程後狀態回到 `Idle`（不是主選單），需重新輸入「旅遊小幫手」。
+- 各 FlowHandler 內的 `BotCommand.Return` 分支已被全域攔截，不會被執行，可清除。
+- `LineWebhookRequest` 在 `Application/Models` 與 `Infrastructure/Line` 各有一份重複類別。
 
 ---
 
 ## 🔜 下一步規劃
 
-1. **本機外網測試與 LINE 帳號連通**：將已完成的 Webhook API 透過 **ngrok** 暴露至外網，並於 LINE Developers Console 設定 Webhook URL，實際以 LINE 軟體測試所有互動流程。(目前未設置ngrok, 以zeabur處理)
+1. **本機外網測試與 LINE 帳號連通**：將已完成的 Webhook API 透過 **ngrok** 暴露至外網，並於 LINE Developers Console 設定 Webhook URL，實際以 LINE 軟體測試所有互動流程。(目前未設置ngrok, 已將部屬遷移至 [NorthFlank](https://northflank.com/)，有提供免費的Webtwork Tunnel)
 2. **優化使用者體驗 (UX)**：考慮利用 LINE Flex Message 美化查詢結果，或加入「系統支援的分類」白名單（解決 FR-008 延伸問題），降低使用者輸入錯誤的機率。
 3. **完善例外處理**：加入 URL 格式驗證功能（改善 FR-010）與完整的錯誤訊息範例提示（改善 FR-012）。
-4. **自動化 CI/CD 部署**：建立 GitHub Actions CI（包含自動化單元測試與建置），並整合部署至 **Zeabur** 等雲端平台。
+4. **自動化 CI/CD 部署**：建立 GitHub Actions CI（包含自動化單元測試與建置），並整合部署至 **NorthFlank** 等雲端平台。
 
 ---
 

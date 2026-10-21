@@ -1,172 +1,156 @@
-# SRS撰寫原則:
-FR = 系統要做什麼
-BR = 系統有哪些規則
-AC = 怎樣才算完成
+# Okinawa Travel Knowledge Bot — 系統設計文件
 
-                            ┌────────────┐
-                            │    IDLE    │
-                            └──────┬─────┘
-                                   │ "旅遊小幫手" / "再見小幫手"
-                                   ▼
-                         ┌─────────┴────┐
-                         │  MAIN_MENU   │
-                         └──────┬───────┘
-                                │
-          ┌────────────┬────────┼────────────┐
-          │            │        │            │
-        儲存         查詢      編輯        刪除
-          │            │        │            │
-          ▼            ▼        ▼            ▼
-     SAVE_FLOW    QUERY_FLOW EDIT_FLOW DELETE_FLOW
-          │            │        │            │
-          │            │        │            │
-          ▼            ▼        ▼            ▼
-      Parse Input   Category   Item         Item
-          │         Selection  Selection    Selection
-          │            │        │            │
-          ▼            ▼        ▼            ▼
-      Validate       Query DB  Edit Field  Confirm
-          │            │        │            │
-          ▼            ▼        ▼            ▼
-      Duplicate      Results   Validate    Delete
-        Check                     │
-          │                       ▼
-          ▼                  Duplicate Check
-       Save DB                    │
-          │                       ▼
-          │                    Update DB
-          │                       │
-          └────────────┬──────────┴────────────┐
-                       │                       │
-                       │     返回主選單         │
-                       └───────────┬───────────┘
-                                   ▼
-                            ┌──────────────┐
-                            │  MAIN_MENU   │
-                            └──────────────┘
+> 本文件以**目前程式碼**為準。SRS 撰寫原則：
+> FR = 系統要做什麼　BR = 系統有哪些規則　AC = 怎樣才算完成
 
+## 1. 對話狀態機
 
-# System Architecture
+`ConversationState` 共 11 種狀態（`Application/States/ConversationState.cs`）。
 
-┌─────────────────────┐
-│       LINE User     │
-└──────────┬──────────┘
-           │ Message
-           ▼
-┌─────────────────────┐
-│     LINE Platform   │
-└──────────┬──────────┘
-           │ Webhook
-           ▼
-┌─────────────────────┐
-│   Webhook Controller│
-└──────────┬──────────┘
-           ▼
-┌─────────────────────┐
-│   Message Handler   │
-│    (MediatR)        │
-└──────────┬──────────┘
-           ▼
-┌─────────────────────┐
-│  State Manager      │
-│      (Redis)        │
-└──────────┬──────────┘
-           ▼
-┌─────────────────────┐
-│      Service        │
-│                     │
-│ Save / Query /      │
-│ Edit / Delete       │
-└──────────┬──────────┘
-           ▼
-┌─────────────────────┐
-│     Repository      │
-└──────────┬──────────┘
-           ▼
-┌─────────────────────┐
-│       SQLite        │
-└─────────────────────┘
+```mermaid
+stateDiagram-v2
+    [*] --> Idle
+    Idle --> MainMenu: 旅遊小幫手
+    Idle --> Idle: 其他訊息（不回覆）
 
-# Repository structure
+    MainMenu --> SaveFlow: 儲存
+    MainMenu --> QueryFlow: 查詢
+    MainMenu --> EditItemSelection: 編輯
+    MainMenu --> DeleteFlow: 刪除
+    MainMenu --> SwitchDestination: 切換地區 / 切換目的地
+
+    SwitchDestination --> MainMenu: 選號碼或輸入新地區
+
+    SaveFlow --> SaveDuplicateConfirmation: 同地區名稱重複
+    SaveFlow --> Idle: 儲存成功
+    SaveDuplicateConfirmation --> Idle: 繼續（儲存）
+
+    QueryFlow --> Idle: 查到結果
+    QueryFlow --> QueryFlow: 查無資料，重新輸入
+
+    EditItemSelection --> EditDataInput: 輸入項目編號
+    EditDataInput --> EditDuplicateConfirmation: 新名稱重複
+    EditDataInput --> Idle: 修改成功
+    EditDuplicateConfirmation --> Idle: 繼續（儲存）
+
+    DeleteFlow --> DeleteConfirmation: 輸入項目編號
+    DeleteConfirmation --> Idle: 繼續（刪除）
+```
+
+### 全域指令（在非 Idle 狀態皆優先攔截）
+
+| 指令 | 行為 |
+|------|------|
+| `返回主選單` | `Reset`（清除 CurrentItemId / PendingSave / PendingEdit，保留目的地）→ `MainMenu`，並重新顯示喚醒提示 |
+| `再見小幫手` | `Reset` → `Idle`，回覆「已退出小幫手。」 |
+
+### 逾時
+
+- 非 `Idle` 狀態超過 **1 小時**（`FlowTimeout`）未活動，下一則訊息先重置流程。
+  - 訊息為 `旅遊小幫手`：直接回主選單（保留目的地）。
+  - 其他訊息：回覆「先前的操作已逾時並已重置，請輸入「旅遊小幫手」開始。」
+- Redis 快取為 **1 天**滑動過期（目的地偏好長效保留）。
+
+> 流程完成後（儲存／編輯／刪除成功、查詢出結果）狀態回到 `Idle`，使用者需再輸入「旅遊小幫手」。
+
+## 2. 系統架構
+
+```mermaid
+flowchart TD
+    U[LINE User] --> P[LINE Platform]
+    P -->|Webhook POST /api/LineWebhook| C[LineWebhookController<br/>HMAC-SHA256 簽章驗證]
+    C -->|ProcessMessageCommand| M[MediatR]
+    M --> H[ProcessMessageCommandHandler<br/>喚醒/休眠/逾時/全域指令/主選單]
+    H <--> S[(Redis<br/>ConversationStateManager)]
+    H -->|Save/Query/Edit/DeleteFlowCommand| F[Flow Handlers]
+    F --> V[Services<br/>Save / Query / Edit / Delete]
+    V --> R[TravelItemRepository]
+    R --> D[(SQLite<br/>okinawa.db)]
+    C -->|ReplyMessageAsync| L[LineClient]
+    L --> P
+```
+
+## 3. 專案結構
+
+```
 OkinawaBot/
-│
-├── src/
-│   └── OkinawaBot/
-│       │
-│       ├── Controllers/
-│       │   └── LineWebhookController.cs
-│       │
-│       ├── Application/
-│       │   │
-│       │   ├── Commands/
-│       │   │   ├── ProcessMessageCommand.cs
-│       │   │   └── SaveFlowCommand.cs
-│       │   │
-│       │   ├── Handlers/
-│       │   │   └── ProcessMessageCommandHandler.cs
-│       │   │
-│       │   ├── Flows/
-│       │   │   ├── SaveFlowHandler.cs
-│       │   │   ├── QueryFlowHandler.cs
-│       │   │   ├── EditFlowHandler.cs
-│       │   │   └── DeleteFlowHandler.cs
-│       │   │
-│       │   ├── Services/
-│       │   │   ├── SaveService.cs
-│       │   │   ├── QueryService.cs
-│       │   │   ├── EditService.cs
-│       │   │   └── DeleteService.cs
-│       │   │
-│       │   └── State/
-│       │       ├── ConversationState.cs
-│       │       └── ConversationStateManager.cs
-│       │
-│       ├── Domain/
-│       │   ├── Entities/
-│       │   │   └── TravelItem.cs
-│       │   │
-│       │   ├── Interfaces/
-│       │   │   └── ITravelItemRepository.cs
-│       │   │
-│       │   └── Rules/
-│       │
-│       ├── Infrastructure/
-│       │   │
-│       │   ├── Data/
-│       │   │   └── AppDbContext.cs
-│       │   │
-│       │   ├── Repositories/
-│       │   │   └── TravelItemRepository.cs
-│       │   │
-│       │   └── Line/
-│       │       └── LineClient.cs
-│       │
-│       ├── Models/
-│       │   └── LineWebhookRequest.cs
-│       │
-│       └── Program.cs
-│
-├── tests/
-│   └── OkinawaBot.Tests/
-│
-├── docs/
-│   ├── SRS.md
-│   ├── design.md
-│   └── DEVLOG.md
-│
-├── docker-compose.yml
+├── src/OkinawaBot/
+│   ├── Controllers/
+│   │   └── LineWebhookController.cs
+│   ├── Application/
+│   │   ├── Commands/        BotCommand, BotCommandParser
+│   │   ├── Requests/        ProcessMessageCommand, Save/Query/Edit/DeleteFlowCommand
+│   │   ├── Handlers/        ProcessMessageCommandHandler
+│   │   ├── Flows/           Save/Query/Edit/DeleteFlowHandler
+│   │   ├── Input/           SaveInputParser, EditInputParser
+│   │   ├── Services/        Save/Query/Edit/DeleteService
+│   │   ├── Models/          BotResponse, SaveResult, EditResult, 各種 Request/ParseResult DTO
+│   │   └── States/          ConversationState, ConversationContext, ConversationStateManager
+│   ├── Domain/
+│   │   ├── Entities/        TravelItem
+│   │   └── Interfaces/      ITravelItemRepository
+│   ├── Infrastructure/
+│   │   ├── Data/            AppDbContext
+│   │   ├── Repositories/    TravelItemRepository
+│   │   └── Line/            ILineClient, LineClient, LineSignatureValidator,
+│   │                        LineBotOptions, LineWebhookRequest
+│   ├── Migrations/
+│   └── Program.cs
+├── tests/OkinawaBot.Tests/
+├── docs/                    SRS.md, design.md, DEVLOG.md
+├── .github/workflows/       （目前為空，尚無 CI）
+├── docker-compose.yml       okinawabot + redis
 ├── Dockerfile
 ├── OkinawaBot.sln
 └── README.md
+```
 
-# SQLite 規劃
-┌──────────────────────────────┐
-│        travel_items          │
-├──────────────────────────────┤
-│ id            INTEGER PK     │
-│ name          TEXT NOT NULL  │
-│ url           TEXT NOT NULL  │
-│ category      TEXT NOT NULL  │
-│ created_at    DATETIME       │
-│ updated_at    DATETIME       │
-└──────────────────────────────┘
+## 4. 指令與輸入格式
+
+| 狀態 | 輸入 |
+|------|------|
+| Idle | `旅遊小幫手` 喚醒 |
+| MainMenu | `儲存` / `查詢` / `編輯` / `刪除` / `切換地區`（或 `切換目的地`） |
+| SaveFlow | `URL #類別 名稱`（單行或多行；`#類別` 前為 URL、後為名稱） |
+| QueryFlow | 類別名稱（需與資料庫現有類別完全相符，限定目前地區） |
+| EditItemSelection / DeleteFlow | 項目編號（目前地區全部項目的 1-based 序號；進入流程時不會列出清單） |
+| EditDataInput | 單項或多項：`URL`、`#類別`、`名稱`，或 `網址:` / `類別:` / `名稱:` 前綴 |
+| 各確認狀態 | `繼續` 或 `返回主選單` |
+
+驗證差異：Edit 會檢查 URL 必須為 http/https；Save 目前不驗證 URL 格式。
+
+## 5. SQLite 資料表
+
+```
+┌────────────────────────────────────────┐
+│              travel_items              │
+├────────────────────────────────────────┤
+│ Id           INTEGER PK                │
+│ Destination  TEXT NOT NULL  (預設 沖繩) │
+│ Name         TEXT NOT NULL             │
+│ Url          TEXT NOT NULL             │
+│ Category     TEXT NOT NULL             │
+│ CreatedAt    DATETIME                  │
+│ UpdatedAt    DATETIME                  │
+├────────────────────────────────────────┤
+│ INDEX (Destination, Category)          │
+│ INDEX (Destination, Name)              │
+└────────────────────────────────────────┘
+```
+
+- 資料不綁定 LINE 使用者（所有使用者共用同一份資料）。
+- 啟動時自動執行 `Database.Migrate()`。
+
+## 6. 對話狀態（Redis）
+
+`ConversationContext`（JSON 序列化，Key 為 LINE `userId`，InstanceName 前綴 `OkinawaBot_`）：
+
+| 欄位 | 說明 |
+|------|------|
+| `UserId` | LINE userId |
+| `State` | 目前 `ConversationState` |
+| `CurrentDestination` | 目前地區，預設 `沖繩` |
+| `CurrentItemId` | 編輯／刪除中的項目 Id |
+| `PendingSave` | 等待重複名稱確認的儲存請求 |
+| `PendingEdit` | 等待重複名稱確認的編輯請求 |
+| `LastActiveAt` | 最後活動時間（逾時判斷用） |
