@@ -2,7 +2,7 @@
 
 本文件記錄 **Okinawa Travel Knowledge Bot** 從需求分析到實作的開發歷程，方便日後回顧設計決策、追蹤進度與規劃下一步。
 
-> 最後更新：2026-10-21
+> 最後更新：2026-10-28
 > 分支：`main`（遠端 `origin/main`）
 
 ---
@@ -33,6 +33,7 @@
 | 20 | 2026-10-21 | — | 技術債清理與品質強化 | 建立 GitHub Actions CI 自動化測試建置流程；移除 Application/Models 下重複的 LineWebhookRequest；為 SaveInputParser 補齊 URL http/https 格式驗證與單元測試。 |
 | 21 | 2026-10-21 | — | 連續操作支援與待機逾時調整 (10分鐘) | 各流程完成後回到 MainMenu 實現免重複喚醒連續操作；將待機逾時由 1 小時調至 10 分鐘；100 項測試全數通過。 |
 | 22 | 2026-10-21 | — | 補齊下一步提示與共用訊息提取 | 盤點並補齊各流程缺少的「返回主選單／再見小幫手」提示；重複文字提取至 `BotMessages`（`WithMainMenu`、`WithRetryHint` 等）；100 項測試全數通過。 |
+| 23 | 2026-10-28 | — | Redis 自動探測與記憶體快取降級 | 啟動時加入 Redis 連線探測與逾時防護，若未設定或連線失敗自動降級使用 DistributedMemoryCache，避免本機無 Redis 時報錯。 |
 ---
 
 ## 📌 各階段詳細紀錄
@@ -399,6 +400,19 @@
   - 設計取捨：不把所有訊息集中成單一檔案。只提取出現 2 處以上的文字；單一流程專屬訊息與 Parser 驗證訊息留在原處，避免 `BotMessages` 變成雜物間。
   - 編輯／刪除「沒有資料」回覆現在也會附「已回到主選單。」，與其他流程一致。
 - **測試與文件**：`EditFlowHandlerTests` 的選號錯誤斷言改引用 `BotMessages`；100 項測試全數通過。同步更新 `SRS.md`（BR-034、新增 BR-036）與 `design.md`（全域指令、專案結構、回覆訊息章節）。
+
+### Phase 23 — Redis 自動探測與記憶體快取降級（2026-10-28）
+
+**目標**：改善本地開發與非 Redis 環境體驗。原本無條件註冊 Redis 會導致未開 Redis 時一收到訊息即拋出連線例外與 500 錯誤。
+
+- **實作改動**：
+  - 在 `Program.cs` 調整分散式快取註冊邏輯：優先檢查 `RedisConnection` 連線字串設定（支援 `none` / `memory` 排除設定）。
+  - 若有配置 Redis，於啟動時加入輕量 1 秒逾時連線探測（`StackExchange.Redis` `ConnectTimeout = 1000`、`AbortOnConnectFail = true`）。
+  - 探測失敗或未配置時，自動降級註冊微軟內建之 `AddDistributedMemoryCache`，並印出提示訊息。
+- **效益**：
+  - 本地開發者毋須強制安裝或啟動 Docker Redis 即可順暢除錯與測試 LINE Bot。
+  - 正式或容器環境在配置可用之 Redis 服務時，無縫保有跨實例分散式快取特性。
+- **測試**：全數 100 項單元與整合測試全數通過（`Passed: 100, Failed: 0`）。
 
 ---
 

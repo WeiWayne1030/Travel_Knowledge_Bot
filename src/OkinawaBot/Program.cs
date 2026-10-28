@@ -57,12 +57,46 @@ builder.Services.AddScoped<BotCommandParser>();
 builder.Services.AddScoped<SaveInputParser>();
 builder.Services.AddScoped<EditInputParser>();
 
-// 使用 Redis 做 Distributed Cache
-builder.Services.AddStackExchangeRedisCache(options =>
+// Distributed Cache (優先嘗試 Redis，若未設定或連線失敗則自動降級為記憶體快取)
+var redisConn = builder.Configuration.GetConnectionString("RedisConnection");
+bool useRedis = false;
+
+if (!string.IsNullOrWhiteSpace(redisConn) &&
+    !redisConn.Equals("none", StringComparison.OrdinalIgnoreCase) &&
+    !redisConn.Equals("memory", StringComparison.OrdinalIgnoreCase) &&
+    !builder.Environment.IsEnvironment("Testing"))
 {
-    options.Configuration = builder.Configuration.GetConnectionString("RedisConnection");
-    options.InstanceName = "OkinawaBot_";
-});
+    try
+    {
+        var configOptions = StackExchange.Redis.ConfigurationOptions.Parse(redisConn);
+        configOptions.ConnectTimeout = 1000;
+        configOptions.SyncTimeout = 1000;
+        configOptions.AbortOnConnectFail = true;
+        using var multiplexer = StackExchange.Redis.ConnectionMultiplexer.Connect(configOptions);
+        if (multiplexer.IsConnected)
+        {
+            useRedis = true;
+        }
+    }
+    catch
+    {
+        useRedis = false;
+    }
+}
+
+if (useRedis)
+{
+    builder.Services.AddStackExchangeRedisCache(options =>
+    {
+        options.Configuration = redisConn;
+        options.InstanceName = "OkinawaBot_";
+    });
+}
+else
+{
+    builder.Services.AddDistributedMemoryCache();
+    Console.WriteLine("[Cache] 未連線至 Redis，已自動啟用記憶體快取 (DistributedMemoryCache)。");
+}
 
 // 使用 Scoped，因為每次 Request 處理完可以將狀態存回 Redis
 builder.Services.AddScoped<ConversationStateManager>();
