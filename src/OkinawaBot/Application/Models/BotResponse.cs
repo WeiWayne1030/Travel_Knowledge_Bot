@@ -1,6 +1,7 @@
-﻿namespace OkinawaBot.Application.Models;
+namespace OkinawaBot.Application.Models;
 
 public class BotResponse
 {
     public string Message { get; init; } = string.Empty;
+    public IReadOnlyList<string>? QuickReplyOptions { get; init; }
 }

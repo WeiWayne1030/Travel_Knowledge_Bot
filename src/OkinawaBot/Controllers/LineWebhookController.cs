@@ -69,7 +69,7 @@ public class LineWebhookController : ControllerBase
 
             if (!string.IsNullOrEmpty(response.Message))
             {
-                await _lineClient.ReplyMessageAsync(replyToken, response.Message);
+                await _lineClient.ReplyMessageAsync(replyToken, response.Message, response.QuickReplyOptions);
             }
         }
 

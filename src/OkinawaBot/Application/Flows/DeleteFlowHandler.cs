@@ -49,7 +49,8 @@ public class DeleteFlowHandler : IRequestHandler<DeleteFlowCommand, BotResponse>
 
         return new BotResponse
         {
-            Message = BotMessages.OperationNotSupported
+            Message = BotMessages.OperationNotSupported,
+            QuickReplyOptions = BotMessages.ReturnOrSleepQuickReplies
         };
     }
 
@@ -67,15 +68,21 @@ public class DeleteFlowHandler : IRequestHandler<DeleteFlowCommand, BotResponse>
 
             return new BotResponse
             {
-                Message = BotMessages.NoItemsToProcess("刪除")
+                Message = BotMessages.NoItemsToProcess("刪除"),
+                QuickReplyOptions = BotMessages.MainMenuQuickReplies
             };
         }
+
+        var fallbackOptions = items.Count <= 11
+            ? Enumerable.Range(1, items.Count).Select(i => i.ToString()).Concat(new[] { "返回主選單" }).ToList()
+            : (IReadOnlyList<string>)BotMessages.ReturnOrSleepQuickReplies;
 
         if (!int.TryParse(message.Trim(), out var number))
         {
             return new BotResponse
             {
-                Message = BotMessages.InvalidItemNumber
+                Message = BotMessages.InvalidItemNumber,
+                QuickReplyOptions = fallbackOptions
             };
         }
 
@@ -83,7 +90,8 @@ public class DeleteFlowHandler : IRequestHandler<DeleteFlowCommand, BotResponse>
         {
             return new BotResponse
             {
-                Message = BotMessages.ItemNumberOutOfRange(items.Count)
+                Message = BotMessages.ItemNumberOutOfRange(items.Count),
+                QuickReplyOptions = fallbackOptions
             };
         }
 
@@ -98,7 +106,8 @@ public class DeleteFlowHandler : IRequestHandler<DeleteFlowCommand, BotResponse>
         {
             Message =
                 $"確定要刪除「{selectedItem.Name}」嗎？\n" +
-                BotMessages.ContinueOrReturnPrompt
+                BotMessages.ContinueOrReturnPrompt,
+            QuickReplyOptions = BotMessages.ContinueOrReturnQuickReplies
         };
     }
 
@@ -114,7 +123,8 @@ public class DeleteFlowHandler : IRequestHandler<DeleteFlowCommand, BotResponse>
         {
             return new BotResponse
             {
-                Message = BotMessages.ContinueOrReturnPrompt
+                Message = BotMessages.ContinueOrReturnPrompt,
+                QuickReplyOptions = BotMessages.ContinueOrReturnQuickReplies
             };
         }
 
@@ -124,7 +134,8 @@ public class DeleteFlowHandler : IRequestHandler<DeleteFlowCommand, BotResponse>
 
             return new BotResponse
             {
-                Message = BotMessages.WithMainMenu("找不到要刪除的項目，操作已取消。")
+                Message = BotMessages.WithMainMenu("找不到要刪除的項目，操作已取消。"),
+                QuickReplyOptions = BotMessages.MainMenuQuickReplies
             };
         }
 
@@ -138,7 +149,8 @@ public class DeleteFlowHandler : IRequestHandler<DeleteFlowCommand, BotResponse>
 
             return new BotResponse
             {
-                Message = BotMessages.WithMainMenu("找不到這筆資料，可能已經被刪除。")
+                Message = BotMessages.WithMainMenu("找不到這筆資料，可能已經被刪除。"),
+                QuickReplyOptions = BotMessages.MainMenuQuickReplies
             };
         }
 
@@ -146,7 +158,8 @@ public class DeleteFlowHandler : IRequestHandler<DeleteFlowCommand, BotResponse>
 
         return new BotResponse
         {
-            Message = BotMessages.WithMainMenu("旅遊資訊刪除成功。")
+            Message = BotMessages.WithMainMenu("旅遊資訊刪除成功。"),
+            QuickReplyOptions = BotMessages.MainMenuQuickReplies
         };
     }
 }

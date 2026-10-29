@@ -52,7 +52,8 @@ public class SaveFlowHandler : IRequestHandler<SaveFlowCommand, BotResponse>
         {
             return new BotResponse
             {
-                Message = BotMessages.WithRetryHint(parseResult.ErrorMessage!)
+                Message = BotMessages.WithRetryHint(parseResult.ErrorMessage!),
+                QuickReplyOptions = BotMessages.ReturnOrSleepQuickReplies
             };
         }
 
@@ -73,13 +74,13 @@ public class SaveFlowHandler : IRequestHandler<SaveFlowCommand, BotResponse>
 
             return new BotResponse
             {
-                Message = BotMessages.WithMainMenu(result.Message)
+                Message = BotMessages.WithMainMenu(result.Message),
+                QuickReplyOptions = BotMessages.MainMenuQuickReplies
             };
         }
 
         if (result.Status == SaveResultStatus.Duplicate)
         {
-
             context.PendingSave = saveRequest;
 
             _stateManager.SetState(userId,  ConversationState.SaveDuplicateConfirmation);
@@ -88,13 +89,15 @@ public class SaveFlowHandler : IRequestHandler<SaveFlowCommand, BotResponse>
             {
                 Message =
                     $"名稱「{saveRequest.Name}」已經存在，是否仍要儲存？\n" +
-                    BotMessages.ContinueOrReturnPrompt
+                    BotMessages.ContinueOrReturnPrompt,
+                QuickReplyOptions = BotMessages.ContinueOrReturnQuickReplies
             };
         }
 
         return new BotResponse
         {
-            Message = BotMessages.WithRetryHint(result.Message)
+            Message = BotMessages.WithRetryHint(result.Message),
+            QuickReplyOptions = BotMessages.ReturnOrSleepQuickReplies
         };
     }
 
@@ -113,7 +116,8 @@ public class SaveFlowHandler : IRequestHandler<SaveFlowCommand, BotResponse>
 
                 return new BotResponse
                 {
-                    Message = BotMessages.WithMainMenu("找不到待確認的資料，已回到主選單。")
+                    Message = BotMessages.WithMainMenu("找不到待確認的資料，已回到主選單。"),
+                    QuickReplyOptions = BotMessages.MainMenuQuickReplies
                 };
             }
 
@@ -130,19 +134,22 @@ public class SaveFlowHandler : IRequestHandler<SaveFlowCommand, BotResponse>
 
                 return new BotResponse
                 {
-                    Message = BotMessages.WithMainMenu(result.Message)
+                    Message = BotMessages.WithMainMenu(result.Message),
+                    QuickReplyOptions = BotMessages.MainMenuQuickReplies
                 };
             }
 
             return new BotResponse
             {
-                Message = $"{result.Message}\n\n請輸入「返回主選單」重新開始。"
+                Message = $"{result.Message}\n\n請輸入「返回主選單」重新開始。",
+                QuickReplyOptions = BotMessages.ReturnOrSleepQuickReplies
             };
         }
 
         return new BotResponse
         {
-            Message = BotMessages.ContinueOrReturnPrompt
+            Message = BotMessages.ContinueOrReturnPrompt,
+            QuickReplyOptions = BotMessages.ContinueOrReturnQuickReplies
         };
     }
 }
