@@ -63,6 +63,8 @@ public class LineWebhookController : ControllerBase
             var message = lineEvent.Message.Text;
             var replyToken = lineEvent.ReplyToken;
 
+            HttpContext.Items["UserId"] = userId;
+
             var response = await _mediator.Send(new ProcessMessageCommand(userId, message));
 
             if (!string.IsNullOrEmpty(response.Message))

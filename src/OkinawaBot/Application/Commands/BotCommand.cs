@@ -2,6 +2,7 @@ namespace OkinawaBot.Application.Commands;
 
 public enum BotCommand
 {
+    WakeUp,
     Save,
     Query,
     Edit,

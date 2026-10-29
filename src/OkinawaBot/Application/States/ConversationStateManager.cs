@@ -91,6 +91,7 @@ public class ConversationStateManager
         context.CurrentItemId = null;
         context.PendingSave = null;
         context.PendingEdit = null;
+        context.PendingDestination = null;
         context.LastActiveAt = DateTime.UtcNow;
     }
 
@@ -101,6 +102,7 @@ public class ConversationStateManager
         context.CurrentItemId = null;
         context.PendingSave = null;
         context.PendingEdit = null;
+        context.PendingDestination = null;
         context.LastActiveAt = DateTime.UtcNow;
     }
 }

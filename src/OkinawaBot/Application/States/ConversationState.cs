@@ -5,6 +5,7 @@ public enum ConversationState
     Idle,
     MainMenu,
     SwitchDestination,
+    SwitchDestinationConfirmation,
     
     SaveFlow,
     SaveDuplicateConfirmation,

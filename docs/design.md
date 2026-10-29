@@ -5,7 +5,7 @@
 
 ## 1. 對話狀態機
 
-`ConversationState` 共 11 種狀態（`Application/States/ConversationState.cs`）。
+`ConversationState` 共 12 種狀態（`Application/States/ConversationState.cs`）。
 
 ```mermaid
 stateDiagram-v2
@@ -19,7 +19,9 @@ stateDiagram-v2
     MainMenu --> DeleteFlow: 刪除
     MainMenu --> SwitchDestination: 切換地區 / 切換目的地
 
-    SwitchDestination --> MainMenu: 選號碼或輸入新地區
+    SwitchDestination --> MainMenu: 選號碼或既有地區
+    SwitchDestination --> SwitchDestinationConfirmation: 輸入新地區名稱
+    SwitchDestinationConfirmation --> MainMenu: 繼續（切換新地區）
 
     SaveFlow --> SaveDuplicateConfirmation: 同地區名稱重複
     SaveFlow --> MainMenu: 儲存成功
@@ -41,7 +43,7 @@ stateDiagram-v2
 
 | 指令 | 行為 |
 |------|------|
-| `返回主選單` | `ResetToMainMenu`（清除 CurrentItemId / PendingSave / PendingEdit，保留目的地）→ `MainMenu`，並重新顯示喚醒提示 |
+| `返回主選單` | `ResetToMainMenu`（清除 CurrentItemId / PendingSave / PendingEdit / PendingDestination，保留目的地）→ `MainMenu`，並重新顯示喚醒提示 |
 | `再見小幫手` | `Reset` → `Idle`，回覆「已退出小幫手。若要再次使用，請輸入「旅遊小幫手」。」（`BotMessages.SleepNotice`） |
 
 ### 逾時與連續操作
@@ -169,4 +171,5 @@ URL 驗證：Save 與 Edit 均已實作 URL 合法 Scheme (http/https) 格式驗
 | `CurrentItemId` | 編輯／刪除中的項目 Id |
 | `PendingSave` | 等待重複名稱確認的儲存請求 |
 | `PendingEdit` | 等待重複名稱確認的編輯請求 |
+| `PendingDestination` | 等待新地區確認的地區名稱 |
 | `LastActiveAt` | 最後活動時間（逾時判斷用） |

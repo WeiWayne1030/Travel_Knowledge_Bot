@@ -247,6 +247,7 @@ public class MessageHandlerTests
     [InlineData(ConversationState.DeleteFlow)]
     [InlineData(ConversationState.DeleteConfirmation)]
     [InlineData(ConversationState.SwitchDestination)]
+    [InlineData(ConversationState.SwitchDestinationConfirmation)]
     public async Task HandleAsync_ReturnFromAnyFlow_ShouldResetAndGoToMainMenu(ConversationState state)
     {
         const string userId = "user-return";
@@ -262,6 +263,7 @@ public class MessageHandlerTests
         {
             Url = "https://example.com", Category = "Attraction", Name = "美麗海水族館"
         };
+        context.PendingDestination = "北海道";
 
         var response = await _handler.Handle(
             new ProcessMessageCommand(userId, "返回主選單"), CancellationToken.None);
@@ -270,6 +272,7 @@ public class MessageHandlerTests
         Assert.Null(context.CurrentItemId);
         Assert.Null(context.PendingSave);
         Assert.Null(context.PendingEdit);
+        Assert.Null(context.PendingDestination);
         Assert.Contains("旅遊小幫手", response.Message);
         Assert.Empty(_repository.Items);
     }
@@ -287,19 +290,48 @@ public class MessageHandlerTests
         Assert.Contains("目前選定地區為【沖繩】", response.Message);
     }
 
-    // 驗證輸入新地區名稱時能成功切換地區並回到主選單
+    // 驗證輸入全新地區名稱時會先要求確認，輸入「繼續」後成功切換並回到主選單
     [Fact]
-    public async Task HandleAsync_WhenInSwitchDestinationState_ShouldChangeCurrentDestination()
+    public async Task HandleAsync_WhenInSwitchDestinationState_NewDestination_ShouldAskConfirmationAndSwitch()
     {
         const string userId = "user-switch-tokyo";
         await HandleAsync(userId, "旅遊小幫手");
         await HandleAsync(userId, "切換地區");
-        var response = await HandleAsync(userId, "東京");
+        var confirmPrompt = await HandleAsync(userId, "東京");
+
+        var context = _stateManager.GetOrCreate(userId);
+        Assert.Equal(ConversationState.SwitchDestinationConfirmation, context.State);
+        Assert.Equal("東京", context.PendingDestination);
+        Assert.Contains("偵測到新地區「東京」", confirmPrompt.Message);
+
+        var response = await HandleAsync(userId, "繼續");
+        Assert.Equal(ConversationState.MainMenu, context.State);
+        Assert.Equal("東京", context.CurrentDestination);
+        Assert.Null(context.PendingDestination);
+        Assert.Contains("已切換目前地區為【東京】", response.Message);
+    }
+
+    // 驗證切換至已存在的既有地區時，無需二次確認即可直接切換
+    [Fact]
+    public async Task HandleAsync_WhenSwitchingToExistingDestination_ShouldSwitchDirectlyWithoutConfirmation()
+    {
+        const string userId = "user-switch-existing";
+        await _repository.CreateAsync(new TravelItem
+        {
+            Destination = "京都",
+            Name = "清水寺",
+            Url = "https://example.com/kiyomizu",
+            Category = "Attraction"
+        });
+
+        await HandleAsync(userId, "旅遊小幫手");
+        await HandleAsync(userId, "切換地區");
+        var response = await HandleAsync(userId, "京都");
 
         var context = _stateManager.GetOrCreate(userId);
         Assert.Equal(ConversationState.MainMenu, context.State);
-        Assert.Equal("東京", context.CurrentDestination);
-        Assert.Contains("已切換目前地區為【東京】", response.Message);
+        Assert.Equal("京都", context.CurrentDestination);
+        Assert.Contains("已切換目前地區為【京都】", response.Message);
     }
 
     // 驗證切換地區後儲存的項目歸屬於該地區
@@ -310,6 +342,7 @@ public class MessageHandlerTests
         await HandleAsync(userId, "旅遊小幫手");
         await HandleAsync(userId, "切換地區");
         await HandleAsync(userId, "京都");
+        await HandleAsync(userId, "繼續");
 
         await HandleAsync(userId, "儲存");
         await HandleAsync(userId, "https://kyoto.example.com #Attraction 金閣寺");
@@ -349,6 +382,7 @@ public class MessageHandlerTests
         await HandleAsync(userId, "旅遊小幫手");
         await HandleAsync(userId, "切換地區");
         await HandleAsync(userId, "福岡");
+        await HandleAsync(userId, "繼續");
         await HandleAsync(userId, "儲存");
 
         var context = _stateManager.GetOrCreate(userId);

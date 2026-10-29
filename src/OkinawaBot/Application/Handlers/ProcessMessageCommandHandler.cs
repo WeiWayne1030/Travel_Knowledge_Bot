@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.AspNetCore.Http;
 using OkinawaBot.Application.Commands;
 using OkinawaBot.Application.Models;
 using OkinawaBot.Application.Requests;
@@ -15,25 +16,35 @@ public class ProcessMessageCommandHandler : IRequestHandler<ProcessMessageComman
     private readonly BotCommandParser _commandParser;
     private readonly IMediator _mediator;
     private readonly OkinawaBot.Application.Services.QueryService _queryService;
+    private readonly IHttpContextAccessor? _httpContextAccessor;
 
     public ProcessMessageCommandHandler(
         ConversationStateManager stateManager,
         BotCommandParser commandParser,
         IMediator mediator,
-        OkinawaBot.Application.Services.QueryService queryService)
+        OkinawaBot.Application.Services.QueryService queryService,
+        IHttpContextAccessor? httpContextAccessor = null)
     {
         _stateManager = stateManager;
         _commandParser = commandParser;
         _mediator = mediator;
         _queryService = queryService;
+        _httpContextAccessor = httpContextAccessor;
     }
 
     public async Task<BotResponse> Handle(ProcessMessageCommand request, CancellationToken cancellationToken)
     {
         var userId = request.UserId;
         var message = request.Message;
+        var command = _commandParser.Parse(message);
 
         var context = _stateManager.GetOrCreate(userId);
+
+        if (_httpContextAccessor?.HttpContext != null)
+        {
+            _httpContextAccessor.HttpContext.Items["UserId"] = userId;
+            _httpContextAccessor.HttpContext.Items["ConversationState"] = context.State.ToString();
+        }
 
         BotResponse response;
 
@@ -42,7 +53,7 @@ public class ProcessMessageCommandHandler : IRequestHandler<ProcessMessageComman
         {
             _stateManager.Reset(userId);
 
-            if (message.Trim() == "旅遊小幫手")
+            if (command == BotCommand.WakeUp)
             {
                 _stateManager.SetState(userId, ConversationState.MainMenu);
                 response = new BotResponse
@@ -54,7 +65,7 @@ public class ProcessMessageCommandHandler : IRequestHandler<ProcessMessageComman
             {
                 response = new BotResponse
                 {
-                    Message = "先前的操作已逾時並已重置，請輸入「旅遊小幫手」開始。"
+                    Message = BotMessages.FlowTimeoutNotice
                 };
             }
 
@@ -66,7 +77,7 @@ public class ProcessMessageCommandHandler : IRequestHandler<ProcessMessageComman
 
         if (context.State == ConversationState.Idle)
         {
-            if (message.Trim() == "旅遊小幫手")
+            if (command == BotCommand.WakeUp)
             {
                 _stateManager.SetState(userId, ConversationState.MainMenu);
                 response = new BotResponse
@@ -82,7 +93,7 @@ public class ProcessMessageCommandHandler : IRequestHandler<ProcessMessageComman
                 };
             }
         }
-        else if (_commandParser.Parse(message) == BotCommand.Sleep)
+        else if (command == BotCommand.Sleep)
         {
             _stateManager.Reset(userId);
             response = new BotResponse
@@ -90,7 +101,7 @@ public class ProcessMessageCommandHandler : IRequestHandler<ProcessMessageComman
                 Message = BotMessages.SleepNotice
             };
         }
-        else if (_commandParser.Parse(message) == BotCommand.Return)
+        else if (command == BotCommand.Return)
         {
             _stateManager.ResetToMainMenu(userId);
             response = new BotResponse
@@ -100,11 +111,15 @@ public class ProcessMessageCommandHandler : IRequestHandler<ProcessMessageComman
         }
         else if (context.State == ConversationState.MainMenu)
         {
-            response = await HandleMainMenuAsync(userId, message, context);
+            response = await HandleMainMenuAsync(userId, message, context, command);
         }
         else if (context.State == ConversationState.SwitchDestination)
         {
             response = await HandleSwitchDestinationAsync(userId, message, context);
+        }
+        else if (context.State == ConversationState.SwitchDestinationConfirmation)
+        {
+            response = HandleSwitchDestinationConfirmation(userId, message, context);
         }
         else if (context.State == ConversationState.SaveFlow ||
             context.State == ConversationState.SaveDuplicateConfirmation)
@@ -134,6 +149,11 @@ public class ProcessMessageCommandHandler : IRequestHandler<ProcessMessageComman
             };
         }
 
+        if (_httpContextAccessor?.HttpContext != null)
+        {
+            _httpContextAccessor.HttpContext.Items["ConversationState"] = context.State.ToString();
+        }
+
         await _stateManager.SaveCurrentAsync();
         return response;
     }
@@ -141,10 +161,9 @@ public class ProcessMessageCommandHandler : IRequestHandler<ProcessMessageComman
     private async Task<BotResponse> HandleMainMenuAsync(
         string userId,
         string message,
-        ConversationContext context)
+        ConversationContext context,
+        BotCommand command)
     {
-        var command = _commandParser.Parse(message);
-
         switch (command)
         {
             case BotCommand.Save:
@@ -174,25 +193,17 @@ public class ProcessMessageCommandHandler : IRequestHandler<ProcessMessageComman
             case BotCommand.Edit:
                 _stateManager.SetState(userId, ConversationState.EditItemSelection);
                 var editableItems = await _queryService.GetAllItemsAsync(context.CurrentDestination);
-                var editableListMsg = editableItems.Any()
-                    ? "\n目前可編輯的項目：\n" + string.Join("\n", editableItems.Select((item, idx) => $"{idx + 1}. {item.Name} (#{item.Category})"))
-                    : "\n目前尚無任何項目。";
-
                 return new BotResponse
                 {
-                    Message = $"""【{context.CurrentDestination}】請輸入要編輯的項目編號或"返回主選單"。{editableListMsg}"""
+                    Message = $"""【{context.CurrentDestination}】請輸入要編輯的項目編號或"返回主選單"。{BotMessages.ItemList("編輯", editableItems)}"""
                 };
 
             case BotCommand.Delete:
                 _stateManager.SetState(userId, ConversationState.DeleteFlow);
                 var deletableItems = await _queryService.GetAllItemsAsync(context.CurrentDestination);
-                var deletableListMsg = deletableItems.Any()
-                    ? "\n目前可刪除的項目：\n" + string.Join("\n", deletableItems.Select((item, idx) => $"{idx + 1}. {item.Name} (#{item.Category})"))
-                    : "\n目前尚無任何項目。";
-
                 return new BotResponse
                 {
-                    Message = $"""【{context.CurrentDestination}】請輸入要刪除的項目編號或"返回主選單"。{deletableListMsg}"""
+                    Message = $"""【{context.CurrentDestination}】請輸入要刪除的項目編號或"返回主選單"。{BotMessages.ItemList("刪除", deletableItems)}"""
                 };
 
             case BotCommand.SwitchDestination:
@@ -238,18 +249,72 @@ public class ProcessMessageCommandHandler : IRequestHandler<ProcessMessageComman
 
         var destinations = await _queryService.GetAvailableDestinationsAsync();
 
-        string chosenDestination = input;
         if (int.TryParse(input, out var index) && index >= 1 && index <= destinations.Count)
         {
-            chosenDestination = destinations[index - 1];
+            var chosen = destinations[index - 1];
+            context.CurrentDestination = chosen;
+            _stateManager.SetState(userId, ConversationState.MainMenu);
+
+            return new BotResponse
+            {
+                Message = $"已切換目前地區為【{chosen}】！📍\n\n{GetWakeUpNotice(chosen)}"
+            };
         }
 
-        context.CurrentDestination = chosenDestination;
+        var matchedDestination = destinations.FirstOrDefault(
+            d => string.Equals(d, input, StringComparison.OrdinalIgnoreCase));
+
+        if (matchedDestination != null)
+        {
+            context.CurrentDestination = matchedDestination;
+            _stateManager.SetState(userId, ConversationState.MainMenu);
+
+            return new BotResponse
+            {
+                Message = $"已切換目前地區為【{matchedDestination}】！📍\n\n{GetWakeUpNotice(matchedDestination)}"
+            };
+        }
+
+        // 新地區防手滑二次確認
+        context.PendingDestination = input;
+        _stateManager.SetState(userId, ConversationState.SwitchDestinationConfirmation);
+
+        return new BotResponse
+        {
+            Message = $"偵測到新地區「{input}」。\n確定要新增並切換到此地區嗎？\n{BotMessages.ContinueOrReturnPrompt}"
+        };
+    }
+
+    private BotResponse HandleSwitchDestinationConfirmation(
+        string userId,
+        string message,
+        ConversationContext context)
+    {
+        if (!string.Equals(message.Trim(), "繼續", StringComparison.OrdinalIgnoreCase))
+        {
+            return new BotResponse
+            {
+                Message = BotMessages.ContinueOrReturnPrompt
+            };
+        }
+
+        if (string.IsNullOrWhiteSpace(context.PendingDestination))
+        {
+            _stateManager.ResetToMainMenu(userId);
+            return new BotResponse
+            {
+                Message = GetWakeUpNotice(context.CurrentDestination)
+            };
+        }
+
+        var newDestination = context.PendingDestination;
+        context.CurrentDestination = newDestination;
+        context.PendingDestination = null;
         _stateManager.SetState(userId, ConversationState.MainMenu);
 
         return new BotResponse
         {
-            Message = $"已切換目前地區為【{chosenDestination}】！📍\n\n{GetWakeUpNotice(chosenDestination)}"
+            Message = $"已切換目前地區為【{newDestination}】！📍\n\n{GetWakeUpNotice(newDestination)}"
         };
     }
 }

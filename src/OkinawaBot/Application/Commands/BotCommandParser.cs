@@ -6,6 +6,7 @@ public class BotCommandParser
     {
         return message.Trim().ToLowerInvariant() switch
         {
+            "旅遊小幫手" => BotCommand.WakeUp,
             "儲存" => BotCommand.Save,
             "查詢" => BotCommand.Query,
             "編輯" => BotCommand.Edit,
