@@ -21,7 +21,7 @@ public class LineClient : ILineClient
         _httpClient.BaseAddress = new Uri("https://api.line.me/v2/bot/message/reply");
     }
 
-    public async Task ReplyMessageAsync(string replyToken, string text)
+    public async Task ReplyMessageAsync(string replyToken, string text, IReadOnlyList<string>? quickReplies = null)
     {
         if (string.IsNullOrEmpty(_options.ChannelAccessToken))
         {
@@ -29,13 +29,31 @@ public class LineClient : ILineClient
             return;
         }
 
+        var message = new LineReplyMessage { Text = text };
+
+        if (quickReplies != null && quickReplies.Any())
+        {
+            message.QuickReply = new LineQuickReply
+            {
+                Items = quickReplies
+                    .Take(13)
+                    .Select(option => new LineQuickReplyItem
+                    {
+                        Action = new LineAction
+                        {
+                            Type = "message",
+                            Label = option.Length > 20 ? option[..20] : option,
+                            Text = option
+                        }
+                    })
+                    .ToList()
+            };
+        }
+
         var requestBody = new LineReplyRequest
         {
             ReplyToken = replyToken,
-            Messages = new List<LineReplyMessage>
-            {
-                new LineReplyMessage { Text = text }
-            }
+            Messages = new List<LineReplyMessage> { message }
         };
 
         var json = JsonSerializer.Serialize(requestBody);
@@ -68,6 +86,37 @@ public class LineReplyMessage
 {
     [JsonPropertyName("type")]
     public string Type { get; set; } = "text";
+
+    [JsonPropertyName("text")]
+    public string Text { get; set; } = string.Empty;
+
+    [JsonPropertyName("quickReply")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public LineQuickReply? QuickReply { get; set; }
+}
+
+public class LineQuickReply
+{
+    [JsonPropertyName("items")]
+    public List<LineQuickReplyItem> Items { get; set; } = new();
+}
+
+public class LineQuickReplyItem
+{
+    [JsonPropertyName("type")]
+    public string Type { get; set; } = "action";
+
+    [JsonPropertyName("action")]
+    public LineAction Action { get; set; } = new();
+}
+
+public class LineAction
+{
+    [JsonPropertyName("type")]
+    public string Type { get; set; } = "message";
+
+    [JsonPropertyName("label")]
+    public string Label { get; set; } = string.Empty;
 
     [JsonPropertyName("text")]
     public string Text { get; set; } = string.Empty;

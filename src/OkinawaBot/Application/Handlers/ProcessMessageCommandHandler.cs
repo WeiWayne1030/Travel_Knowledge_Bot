@@ -58,14 +58,16 @@ public class ProcessMessageCommandHandler : IRequestHandler<ProcessMessageComman
                 _stateManager.SetState(userId, ConversationState.MainMenu);
                 response = new BotResponse
                 {
-                    Message = GetWakeUpNotice(context.CurrentDestination)
+                    Message = GetWakeUpNotice(context.CurrentDestination),
+                    QuickReplyOptions = BotMessages.MainMenuQuickReplies
                 };
             }
             else
             {
                 response = new BotResponse
                 {
-                    Message = BotMessages.FlowTimeoutNotice
+                    Message = BotMessages.FlowTimeoutNotice,
+                    QuickReplyOptions = BotMessages.WakeUpQuickReplies
                 };
             }
 
@@ -82,7 +84,8 @@ public class ProcessMessageCommandHandler : IRequestHandler<ProcessMessageComman
                 _stateManager.SetState(userId, ConversationState.MainMenu);
                 response = new BotResponse
                 {
-                    Message = GetWakeUpNotice(context.CurrentDestination)
+                    Message = GetWakeUpNotice(context.CurrentDestination),
+                    QuickReplyOptions = BotMessages.MainMenuQuickReplies
                 };
             }
             else
@@ -98,7 +101,8 @@ public class ProcessMessageCommandHandler : IRequestHandler<ProcessMessageComman
             _stateManager.Reset(userId);
             response = new BotResponse
             {
-                Message = BotMessages.SleepNotice
+                Message = BotMessages.SleepNotice,
+                QuickReplyOptions = BotMessages.WakeUpQuickReplies
             };
         }
         else if (command == BotCommand.Return)
@@ -106,7 +110,8 @@ public class ProcessMessageCommandHandler : IRequestHandler<ProcessMessageComman
             _stateManager.ResetToMainMenu(userId);
             response = new BotResponse
             {
-                Message = GetWakeUpNotice(context.CurrentDestination)
+                Message = GetWakeUpNotice(context.CurrentDestination),
+                QuickReplyOptions = BotMessages.MainMenuQuickReplies
             };
         }
         else if (context.State == ConversationState.MainMenu)
@@ -145,7 +150,8 @@ public class ProcessMessageCommandHandler : IRequestHandler<ProcessMessageComman
         {
             response = new BotResponse
             {
-                Message = BotMessages.OperationNotSupported
+                Message = BotMessages.OperationNotSupported,
+                QuickReplyOptions = BotMessages.ReturnOrSleepQuickReplies
             };
         }
 
@@ -175,7 +181,8 @@ public class ProcessMessageCommandHandler : IRequestHandler<ProcessMessageComman
                         "URL\n" +
                         "#類別\n" +
                         "名稱\n\n" +
-                        "（若要取消，請輸入「返回主選單」）"
+                        "（若要取消，請輸入「返回主選單」）",
+                    QuickReplyOptions = BotMessages.ReturnOrSleepQuickReplies
                 };
 
             case BotCommand.Query:
@@ -185,25 +192,39 @@ public class ProcessMessageCommandHandler : IRequestHandler<ProcessMessageComman
                     ? $"\n【{context.CurrentDestination}】目前有的類別：\n" + string.Join("\n", categories)
                     : $"\n【{context.CurrentDestination}】目前還沒有任何類別。";
 
+                var queryOptions = categories.Take(11).ToList();
+                queryOptions.Add("返回主選單");
+
                 return new BotResponse
                 {
-                    Message = $"""請輸入要查詢的類別或"返回主選單"。{categoriesMsg}"""
+                    Message = $"""請輸入要查詢的類別或"返回主選單"。{categoriesMsg}""",
+                    QuickReplyOptions = queryOptions
                 };
 
             case BotCommand.Edit:
                 _stateManager.SetState(userId, ConversationState.EditItemSelection);
                 var editableItems = await _queryService.GetAllItemsAsync(context.CurrentDestination);
+                var editOptions = editableItems.Count > 0 && editableItems.Count <= 11
+                    ? Enumerable.Range(1, editableItems.Count).Select(i => i.ToString()).Concat(new[] { "返回主選單" }).ToList()
+                    : (IReadOnlyList<string>)BotMessages.ReturnOrSleepQuickReplies;
+
                 return new BotResponse
                 {
-                    Message = $"""【{context.CurrentDestination}】請輸入要編輯的項目編號或"返回主選單"。{BotMessages.ItemList("編輯", editableItems)}"""
+                    Message = $"""【{context.CurrentDestination}】請輸入要編輯的項目編號或"返回主選單"。{BotMessages.ItemList("編輯", editableItems)}""",
+                    QuickReplyOptions = editOptions
                 };
 
             case BotCommand.Delete:
                 _stateManager.SetState(userId, ConversationState.DeleteFlow);
                 var deletableItems = await _queryService.GetAllItemsAsync(context.CurrentDestination);
+                var deleteOptions = deletableItems.Count > 0 && deletableItems.Count <= 11
+                    ? Enumerable.Range(1, deletableItems.Count).Select(i => i.ToString()).Concat(new[] { "返回主選單" }).ToList()
+                    : (IReadOnlyList<string>)BotMessages.ReturnOrSleepQuickReplies;
+
                 return new BotResponse
                 {
-                    Message = $"""【{context.CurrentDestination}】請輸入要刪除的項目編號或"返回主選單"。{BotMessages.ItemList("刪除", deletableItems)}"""
+                    Message = $"""【{context.CurrentDestination}】請輸入要刪除的項目編號或"返回主選單"。{BotMessages.ItemList("刪除", deletableItems)}""",
+                    QuickReplyOptions = deleteOptions
                 };
 
             case BotCommand.SwitchDestination:
@@ -213,22 +234,28 @@ public class ProcessMessageCommandHandler : IRequestHandler<ProcessMessageComman
                     ? "\n已建立的地區：\n" + string.Join("\n", destinations.Select((d, idx) => $"{idx + 1}. {d}"))
                     : "\n目前尚無其他地區。";
 
+                var switchOptions = destinations.Take(11).ToList();
+                switchOptions.Add("返回主選單");
+
                 return new BotResponse
                 {
-                    Message = $"目前選定地區為【{context.CurrentDestination}】。{destListMsg}\n\n請輸入號碼選擇，或直接輸入新的地區名稱（如：東京、首爾、曼谷），或輸入「返回主選單」取消："
+                    Message = $"目前選定地區為【{context.CurrentDestination}】。{destListMsg}\n\n請輸入號碼選擇，或直接輸入新的地區名稱（如：東京、首爾、曼谷），或輸入「返回主選單」取消：",
+                    QuickReplyOptions = switchOptions
                 };
 
             case BotCommand.Sleep:
                 _stateManager.Reset(userId);
                 return new BotResponse
                 {
-                    Message = BotMessages.SleepNotice
+                    Message = BotMessages.SleepNotice,
+                    QuickReplyOptions = BotMessages.WakeUpQuickReplies
                 };
 
             default:
                 return new BotResponse
                 {
-                    Message = BotMessages.MainMenuPrompt
+                    Message = BotMessages.MainMenuPrompt,
+                    QuickReplyOptions = BotMessages.MainMenuQuickReplies
                 };
         }
     }
@@ -243,7 +270,8 @@ public class ProcessMessageCommandHandler : IRequestHandler<ProcessMessageComman
         {
             return new BotResponse
             {
-                Message = "請輸入有效的地區名稱或號碼，或輸入「返回主選單」取消。"
+                Message = "請輸入有效的地區名稱或號碼，或輸入「返回主選單」取消。",
+                QuickReplyOptions = BotMessages.ReturnOrSleepQuickReplies
             };
         }
 
@@ -257,7 +285,8 @@ public class ProcessMessageCommandHandler : IRequestHandler<ProcessMessageComman
 
             return new BotResponse
             {
-                Message = $"已切換目前地區為【{chosen}】！📍\n\n{GetWakeUpNotice(chosen)}"
+                Message = $"已切換目前地區為【{chosen}】！📍\n\n{GetWakeUpNotice(chosen)}",
+                QuickReplyOptions = BotMessages.MainMenuQuickReplies
             };
         }
 
@@ -271,7 +300,8 @@ public class ProcessMessageCommandHandler : IRequestHandler<ProcessMessageComman
 
             return new BotResponse
             {
-                Message = $"已切換目前地區為【{matchedDestination}】！📍\n\n{GetWakeUpNotice(matchedDestination)}"
+                Message = $"已切換目前地區為【{matchedDestination}】！📍\n\n{GetWakeUpNotice(matchedDestination)}",
+                QuickReplyOptions = BotMessages.MainMenuQuickReplies
             };
         }
 
@@ -281,7 +311,8 @@ public class ProcessMessageCommandHandler : IRequestHandler<ProcessMessageComman
 
         return new BotResponse
         {
-            Message = $"偵測到新地區「{input}」。\n確定要新增並切換到此地區嗎？\n{BotMessages.ContinueOrReturnPrompt}"
+            Message = $"偵測到新地區「{input}」。\n確定要新增並切換到此地區嗎？\n{BotMessages.ContinueOrReturnPrompt}",
+            QuickReplyOptions = BotMessages.ContinueOrReturnQuickReplies
         };
     }
 
@@ -294,7 +325,8 @@ public class ProcessMessageCommandHandler : IRequestHandler<ProcessMessageComman
         {
             return new BotResponse
             {
-                Message = BotMessages.ContinueOrReturnPrompt
+                Message = BotMessages.ContinueOrReturnPrompt,
+                QuickReplyOptions = BotMessages.ContinueOrReturnQuickReplies
             };
         }
 
@@ -303,7 +335,8 @@ public class ProcessMessageCommandHandler : IRequestHandler<ProcessMessageComman
             _stateManager.ResetToMainMenu(userId);
             return new BotResponse
             {
-                Message = GetWakeUpNotice(context.CurrentDestination)
+                Message = GetWakeUpNotice(context.CurrentDestination),
+                QuickReplyOptions = BotMessages.MainMenuQuickReplies
             };
         }
 
@@ -314,7 +347,8 @@ public class ProcessMessageCommandHandler : IRequestHandler<ProcessMessageComman
 
         return new BotResponse
         {
-            Message = $"已切換目前地區為【{newDestination}】！📍\n\n{GetWakeUpNotice(newDestination)}"
+            Message = $"已切換目前地區為【{newDestination}】！📍\n\n{GetWakeUpNotice(newDestination)}",
+            QuickReplyOptions = BotMessages.MainMenuQuickReplies
         };
     }
 }

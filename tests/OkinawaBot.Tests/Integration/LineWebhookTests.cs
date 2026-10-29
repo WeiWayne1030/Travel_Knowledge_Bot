@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using OkinawaBot.Application.Models;
 using OkinawaBot.Infrastructure.Data;
 using OkinawaBot.Infrastructure.Line;
 
@@ -403,6 +404,48 @@ public class LineWebhookTests
             
             Assert.Null(deletedItem);
         }
+    }
+
+    [Fact]
+    public async Task QuickReply_ShouldAttachButtonsToResponses()
+    {
+        var client = _factory.CreateClient();
+        var userId = "quick-reply-test-user";
+        var fakeClient = _factory.Services.GetRequiredService<ILineClient>() as OkinawaBot.Tests.Fakes.FakeLineClient;
+        Assert.NotNull(fakeClient);
+
+        // 1. 喚醒小幫手，應該附帶主選單 Quick Reply 按鈕
+        var wakeRequest = new LineWebhookRequest
+        {
+            Events = [ new LineWebhookEvent { Type = "message", ReplyToken = "qr_wake", Source = new LineSource { UserId = userId }, Message = new LineMessage { Type = "text", Text = "旅遊小幫手" } } ]
+        };
+        await PostWebhookAsync(client, wakeRequest);
+
+        Assert.True(fakeClient.SentQuickReplies.TryGetValue("qr_wake", out var wakeQuickReplies));
+        Assert.NotNull(wakeQuickReplies);
+        Assert.Equal(BotMessages.MainMenuQuickReplies, wakeQuickReplies);
+
+        // 2. 點擊「查詢」，應該附帶類別按鈕與「返回主選單」
+        var queryRequest = new LineWebhookRequest
+        {
+            Events = [ new LineWebhookEvent { Type = "message", ReplyToken = "qr_query", Source = new LineSource { UserId = userId }, Message = new LineMessage { Type = "text", Text = "查詢" } } ]
+        };
+        await PostWebhookAsync(client, queryRequest);
+
+        Assert.True(fakeClient.SentQuickReplies.TryGetValue("qr_query", out var queryQuickReplies));
+        Assert.NotNull(queryQuickReplies);
+        Assert.Contains("返回主選單", queryQuickReplies);
+
+        // 3. 輸入「再見小幫手」，休眠後應附帶「旅遊小幫手」重新喚醒按鈕
+        var sleepRequest = new LineWebhookRequest
+        {
+            Events = [ new LineWebhookEvent { Type = "message", ReplyToken = "qr_sleep", Source = new LineSource { UserId = userId }, Message = new LineMessage { Type = "text", Text = "再見小幫手" } } ]
+        };
+        await PostWebhookAsync(client, sleepRequest);
+
+        Assert.True(fakeClient.SentQuickReplies.TryGetValue("qr_sleep", out var sleepQuickReplies));
+        Assert.NotNull(sleepQuickReplies);
+        Assert.Equal(BotMessages.WakeUpQuickReplies, sleepQuickReplies);
     }
     //把我們在測試設定的假密鑰 ("test_secret") 拿來，動態對假 Payload 進行 HMAC-SHA256 雜湊，並把產生的 Signature 塞入 Headers 裡，完美模擬真正的 LINE 伺服器行為。
     private async System.Threading.Tasks.Task<System.Net.Http.HttpResponseMessage> PostWebhookAsync(System.Net.Http.HttpClient client, OkinawaBot.Infrastructure.Line.LineWebhookRequest request)

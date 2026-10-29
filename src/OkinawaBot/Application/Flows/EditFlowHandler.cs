@@ -63,7 +63,8 @@ public class EditFlowHandler : IRequestHandler<EditFlowCommand, BotResponse>
 
         return new BotResponse
         {
-            Message = BotMessages.OperationNotSupported
+            Message = BotMessages.OperationNotSupported,
+            QuickReplyOptions = BotMessages.ReturnOrSleepQuickReplies
         };
     }
 
@@ -82,9 +83,14 @@ public class EditFlowHandler : IRequestHandler<EditFlowCommand, BotResponse>
 
             return new BotResponse
             {
-                Message = BotMessages.NoItemsToProcess("編輯")
+                Message = BotMessages.NoItemsToProcess("編輯"),
+                QuickReplyOptions = BotMessages.MainMenuQuickReplies
             };
         }
+
+        var fallbackOptions = items.Count <= 11
+            ? Enumerable.Range(1, items.Count).Select(i => i.ToString()).Concat(new[] { "返回主選單" }).ToList()
+            : (IReadOnlyList<string>)BotMessages.ReturnOrSleepQuickReplies;
 
         if (!int.TryParse(
             message.Trim(),
@@ -92,7 +98,8 @@ public class EditFlowHandler : IRequestHandler<EditFlowCommand, BotResponse>
         {
             return new BotResponse
             {
-                Message = BotMessages.InvalidItemNumber
+                Message = BotMessages.InvalidItemNumber,
+                QuickReplyOptions = fallbackOptions
             };
         }
 
@@ -101,7 +108,8 @@ public class EditFlowHandler : IRequestHandler<EditFlowCommand, BotResponse>
         {
             return new BotResponse
             {
-                Message = BotMessages.ItemNumberOutOfRange(items.Count)
+                Message = BotMessages.ItemNumberOutOfRange(items.Count),
+                QuickReplyOptions = fallbackOptions
             };
         }
 
@@ -127,7 +135,8 @@ public class EditFlowHandler : IRequestHandler<EditFlowCommand, BotResponse>
                 "• 僅改類別：輸入 #新類別（例如 #美食）\n" +
                 "• 僅改名稱：輸入新名稱（例如 美麗海水族館 或 名稱: 美麗海水族館）\n" +
                 "• 多項修改：URL #新類別 新名稱\n\n" +
-                "（若要取消修改，請輸入「返回主選單」）"
+                "（若要取消修改，請輸入「返回主選單」）",
+            QuickReplyOptions = BotMessages.ReturnOrSleepQuickReplies
         };
     }
 
@@ -142,7 +151,8 @@ public class EditFlowHandler : IRequestHandler<EditFlowCommand, BotResponse>
 
             return new BotResponse
             {
-                Message = BotMessages.WithMainMenu("找不到目前要編輯的資料，請重新操作。")
+                Message = BotMessages.WithMainMenu("找不到目前要編輯的資料，請重新操作。"),
+                QuickReplyOptions = BotMessages.MainMenuQuickReplies
             };
         }
 
@@ -153,7 +163,8 @@ public class EditFlowHandler : IRequestHandler<EditFlowCommand, BotResponse>
         {
             return new BotResponse
             {
-                Message = BotMessages.WithRetryHint(parseResult.ErrorMessage ?? "輸入格式錯誤。")
+                Message = BotMessages.WithRetryHint(parseResult.ErrorMessage ?? "輸入格式錯誤。"),
+                QuickReplyOptions = BotMessages.ReturnOrSleepQuickReplies
             };
         }
 
@@ -175,7 +186,8 @@ public class EditFlowHandler : IRequestHandler<EditFlowCommand, BotResponse>
 
             return new BotResponse
             {
-                Message = BotMessages.WithMainMenu("找不到要編輯的資料。")
+                Message = BotMessages.WithMainMenu("找不到要編輯的資料。"),
+                QuickReplyOptions = BotMessages.MainMenuQuickReplies
             };
         }
         if (result.Status == EditResultStatus.Duplicate)
@@ -190,7 +202,8 @@ public class EditFlowHandler : IRequestHandler<EditFlowCommand, BotResponse>
                 Message =
                     $"名稱「{request.Name}」已經存在。\n\n" +
                     "如果仍然要儲存，請輸入 繼續。\n" +
-                    "如果不要修改，請輸入 返回主選單。"
+                    "如果不要修改，請輸入 返回主選單。",
+                QuickReplyOptions = BotMessages.ContinueOrReturnQuickReplies
             };
         }
 
@@ -198,7 +211,8 @@ public class EditFlowHandler : IRequestHandler<EditFlowCommand, BotResponse>
 
         return new BotResponse
         {
-            Message = BotMessages.WithMainMenu("旅遊資訊修改成功。")
+            Message = BotMessages.WithMainMenu("旅遊資訊修改成功。"),
+            QuickReplyOptions = BotMessages.MainMenuQuickReplies
         };
     }
 
@@ -213,7 +227,8 @@ public class EditFlowHandler : IRequestHandler<EditFlowCommand, BotResponse>
         {
             return new BotResponse
             {
-                Message = BotMessages.ContinueOrReturnPrompt
+                Message = BotMessages.ContinueOrReturnPrompt,
+                QuickReplyOptions = BotMessages.ContinueOrReturnQuickReplies
             };
         }
 
@@ -224,7 +239,8 @@ public class EditFlowHandler : IRequestHandler<EditFlowCommand, BotResponse>
 
             return new BotResponse
             {
-                Message = BotMessages.WithMainMenu("找不到待處理的修改資料，請重新操作。")
+                Message = BotMessages.WithMainMenu("找不到待處理的修改資料，請重新操作。"),
+                QuickReplyOptions = BotMessages.MainMenuQuickReplies
             };
         }
 
@@ -241,7 +257,8 @@ public class EditFlowHandler : IRequestHandler<EditFlowCommand, BotResponse>
 
             return new BotResponse
             {
-                Message = BotMessages.WithMainMenu("找不到要編輯的資料。")
+                Message = BotMessages.WithMainMenu("找不到要編輯的資料。"),
+                QuickReplyOptions = BotMessages.MainMenuQuickReplies
             };
         }
 
@@ -249,7 +266,8 @@ public class EditFlowHandler : IRequestHandler<EditFlowCommand, BotResponse>
 
         return new BotResponse
         {
-            Message = BotMessages.WithMainMenu("旅遊資訊修改成功。")
+            Message = BotMessages.WithMainMenu("旅遊資訊修改成功。"),
+            QuickReplyOptions = BotMessages.MainMenuQuickReplies
         };
     }
 }

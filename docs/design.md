@@ -67,7 +67,7 @@ flowchart TD
     F --> V[Services<br/>Save / Query / Edit / Delete]
     V --> R[TravelItemRepository]
     R --> D[(SQLite<br/>okinawa.db)]
-    C -->|ReplyMessageAsync| L[LineClient]
+    C -->|ReplyMessageAsync(text + QuickReplyOptions)| L[LineClient]
     L --> P
 ```
 
@@ -98,7 +98,7 @@ OkinawaBot/
 │   ├── Migrations/
 │   └── Program.cs
 ├── tests/OkinawaBot.Tests/
-├── docs/                    SRS.md, design.md, DEVLOG.md
+├── docs/                    SRS.md, design.md, DEVLOG.md, usage-flow.md
 ├── .github/workflows/       dotnet.yml (GitHub Actions CI)
 ├── docker-compose.yml       okinawabot + redis
 ├── Dockerfile
@@ -136,6 +136,34 @@ URL 驗證：Save 與 Edit 均已實作 URL 合法 Scheme (http/https) 格式驗
 | `NoItemsToProcess(action)` | 編輯／刪除時沒有資料，並回主選單 |
 
 提取原則：同一段文字出現 2 處以上才放進 `BotMessages`。
+
+### Quick Reply 按鈕（SRS FR-020）
+
+點擊 Quick Reply 按鈕等同使用者自己輸入該按鈕的 `text`，所以 `BotCommandParser` 與狀態機完全不需改動；唯一新增邏輯是「每則回覆依狀態決定附哪些按鈕」。
+
+資料流：Flow Handler 在 `BotResponse.QuickReplyOptions`（`IReadOnlyList<string>?`）填入按鈕文字 → `LineWebhookController` 傳給 `ILineClient.ReplyMessageAsync(replyToken, text, quickReplies)` → `LineClient` 組成 LINE JSON（`quickReply.items[].action = { type: message, label, text }`）。
+
+`BotMessages` 內的共用按鈕組：
+
+| 成員 | 按鈕 |
+|------|------|
+| `MainMenuQuickReplies` | 儲存 / 查詢 / 編輯 / 刪除 / 切換地區 / 再見小幫手 |
+| `WakeUpQuickReplies` | 旅遊小幫手 |
+| `ReturnOrSleepQuickReplies` | 返回主選單 / 再見小幫手 |
+| `ContinueOrReturnQuickReplies` | 繼續 / 返回主選單 |
+
+動態按鈕（在 `ProcessMessageCommandHandler` 與 Edit／Delete Handler 組出）：
+
+- 查詢：現有類別（最多 11）＋ `返回主選單`
+- 切換地區：既有地區（最多 11）＋ `返回主選單`
+- 編輯／刪除選號：項目數 ≤ 11 時為 `1..N` ＋ `返回主選單`，否則退回 `返回主選單 / 再見小幫手`（使用者改打數字）
+
+限制與規則：
+
+- LINE 上限 13 顆，`LineClient` 取前 13 顆；`label` 超過 20 字截斷，`text` 不截斷。
+- 只用免費的 Reply API，不使用 Push Message。
+- Idle 狀態下收到非喚醒訊息仍不回覆（`Message` 為空即不發送）。
+- 測試：`FakeLineClient.SentQuickReplies` 記錄每個 replyToken 的按鈕；`LineWebhookTests.QuickReply_ShouldAttachButtonsToResponses` 驗證喚醒／查詢／休眠。
 
 ## 5. SQLite 資料表
 

@@ -34,4 +34,24 @@ public static class BotMessages
         items.Count > 0
             ? $"\n目前可{action}的項目：\n" + string.Join("\n", items.Select((item, idx) => $"{idx + 1}. {item.Name} (#{item.Category})"))
             : "\n目前尚無任何項目。";
+
+    public static readonly IReadOnlyList<string> MainMenuQuickReplies = new[]
+    {
+        "儲存", "查詢", "編輯", "刪除", "切換地區", "再見小幫手"
+    };
+
+    public static readonly IReadOnlyList<string> WakeUpQuickReplies = new[]
+    {
+        WakeUpWord
+    };
+
+    public static readonly IReadOnlyList<string> ReturnOrSleepQuickReplies = new[]
+    {
+        "返回主選單", "再見小幫手"
+    };
+
+    public static readonly IReadOnlyList<string> ContinueOrReturnQuickReplies = new[]
+    {
+        "繼續", "返回主選單"
+    };
 }

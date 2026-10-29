@@ -2,7 +2,7 @@
 
 本文件記錄 **Okinawa Travel Knowledge Bot** 從需求分析到實作的開發歷程，方便日後回顧設計決策、追蹤進度與規劃下一步。
 
-> 最後更新：2026-10-28
+> 最後更新：2026-10-29
 > 分支：`main`（遠端 `origin/main`）
 
 ---
@@ -34,6 +34,7 @@
 | 21 | 2026-10-21 | — | 連續操作支援與待機逾時調整 (10分鐘) | 各流程完成後回到 MainMenu 實現免重複喚醒連續操作；將待機逾時由 1 小時調至 10 分鐘；100 項測試全數通過。 |
 | 22 | 2026-10-21 | — | 補齊下一步提示與共用訊息提取 | 盤點並補齊各流程缺少的「返回主選單／再見小幫手」提示；重複文字提取至 `BotMessages`（`WithMainMenu`、`WithRetryHint` 等）；100 項測試全數通過。 |
 | 23 | 2026-10-28 | — | Redis 自動探測與記憶體快取降級 | 啟動時加入 Redis 連線探測與逾時防護，若未設定或連線失敗自動降級使用 DistributedMemoryCache，避免本機無 Redis 時報錯。 |
+| 24 | 2026-10-29 | — | LINE Quick Reply 按鈕化 | 各回覆依狀態附上 Quick Reply 按鈕（主選單、類別、編號、繼續／返回主選單、再見小幫手），使用者幾乎不用打字；106 項測試全數通過。 |
 ---
 
 ## 📌 各階段詳細紀錄
@@ -414,6 +415,24 @@
   - 正式或容器環境在配置可用之 Redis 服務時，無縫保有跨實例分散式快取特性。
 - **測試**：全數 100 項單元與整合測試全數通過（`Passed: 100, Failed: 0`）。
 
+### Phase 24 — LINE Quick Reply 按鈕化（2026-10-29，分支 `feat/AddingQuickReply`）
+
+**目標**：讓使用者靠點按鈕操作主選單、類別、確認與退出，降低打字成本（CP 值最高的 UX 改善）。
+
+- **設計決策**：
+  - 採 `message` action：點按鈕＝使用者送出同樣文字，`BotCommandParser`、狀態機、啟動流程完全不用改。
+  - 只用 Reply API（免費），不用 Push Message；逾時不主動通知，使用者下次傳訊時才被動告知。
+  - 項目過多（> 11）時不硬塞按鈕，退回「返回主選單／再見小幫手」，使用者仍可直接打編號。
+  - 未採用 Rich Menu：全域 Rich Menu 會常駐，與「喚醒後才出現、逾時消失」需求衝突，需 per-user 綁定與排程解除，留待之後評估。
+- **實作改動**：
+  - `ILineClient` / `LineClient`：`ReplyMessageAsync` 新增 `quickReplies` 參數；新增 `LineQuickReply`、`LineQuickReplyItem`、`LineAction` DTO；上限 13 顆、label 20 字截斷。
+  - `BotResponse` 新增 `QuickReplyOptions`；`LineWebhookController` 轉傳。
+  - `BotMessages` 新增 `MainMenuQuickReplies`、`WakeUpQuickReplies`、`ReturnOrSleepQuickReplies`、`ContinueOrReturnQuickReplies`。
+  - `ProcessMessageCommandHandler` 與 Save／Query／Edit／Delete FlowHandler 每個回覆點依狀態附按鈕。
+- **測試**：`FakeLineClient` 新增 `SentQuickReplies`；`LineWebhookTests` 新增 `QuickReply_ShouldAttachButtonsToResponses`；106 項測試全數通過。
+- **文件**：`SRS.md` 新增 FR-020／BR-044~046／AC-020-01~04；`design.md` 新增 Quick Reply 章節；新增 `usage-flow.md` 使用流程。
+- **LINE 後台**：不需額外設定，確認 Webhook 開啟、自動回應訊息關閉即可。
+
 ---
 
 ## ✅ SRS 需求實作進度
@@ -439,6 +458,7 @@
 | FR-017 | 切換地區 | ✅ 已完成（`切換地區` / `切換目的地`，資料依地區隔離） |
 | FR-018 | 流程逾時 | ✅ 已完成（非 Idle 超過 10 分鐘自動重置，Redis 1 天過期） |
 | FR-019 / — | LINE Webhook 串接 | ✅ 已完成（`LineWebhookController` 支援 HMAC-SHA256 簽章驗證、MediatR 轉發與 LINE 回覆 API） |
+| FR-020 | LINE Quick Reply 按鈕 | ✅ 已完成（依狀態附按鈕，上限 13 顆；項目 > 11 時退回文字輸入） |
 
 ---
 

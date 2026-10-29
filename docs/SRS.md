@@ -42,6 +42,7 @@ The MVP includes:
 - Querying saved travel information by category.
 - Editing and deleting saved travel information.
 - Conversation timeout handling and persistent conversation state (Redis).
+- LINE Quick Reply buttons so that users can operate the bot with minimal typing (FR-020).
 
 ### 4.2 Out of Scope
 
@@ -692,6 +693,60 @@ BR-043
 
 The system SHALL process only text message events and SHALL reply through the LINE reply API. Empty responses (e.g. messages received while Idle) SHALL NOT be replied to.
 
+FR-020 — LINE Quick Reply Buttons
+
+The system SHALL attach LINE Quick Reply buttons to bot replies so that the user can choose the next step by tapping a button instead of typing. Tapping a button sends the button's text as a normal user message, therefore the existing command parsing and state machine are unchanged.
+
+Business Rules
+
+BR-044
+
+Quick Reply buttons SHALL be selected by the current conversation state:
+
+| Situation | Buttons |
+|-----------|---------|
+| Main Menu (after activation, 返回主選單, or a completed flow) | 儲存 / 查詢 / 編輯 / 刪除 / 切換地區 / 再見小幫手 |
+| Idle after 再見小幫手 or flow timeout | 旅遊小幫手 |
+| Query flow entry | existing categories of the current destination (up to 11) + 返回主選單 |
+| Edit / Delete item selection | item numbers 1..N (only when N ≤ 11) + 返回主選單; otherwise 返回主選單 / 再見小幫手 |
+| Switch Destination | stored destinations (up to 11) + 返回主選單 |
+| Free-form input (Save, Edit data input), invalid input, errors | 返回主選單 / 再見小幫手 |
+| Confirmation (duplicate name, new destination, delete) | 繼續 / 返回主選單 |
+
+BR-045
+
+The system SHALL respect LINE limits: at most 13 buttons per message and a button label of at most 20 characters (longer labels are truncated; the sent text is not truncated).
+
+BR-046
+
+Quick Reply SHALL NOT replace typed input: the user MAY always type any command, number or text instead of tapping a button. Quick Reply buttons are sent only through the free LINE reply API (no push messages).
+
+Acceptance Criteria
+
+AC-020-01
+
+Given the user activates the bot
+When the welcome message is displayed
+Then the reply SHALL include the Main Menu Quick Reply buttons.
+
+AC-020-02
+
+Given the user enters the Query flow
+When the category list is displayed
+Then the reply SHALL include one button per category and a 返回主選單 button.
+
+AC-020-03
+
+Given the user enters 再見小幫手
+When the bot replies
+Then the reply SHALL include a 旅遊小幫手 button.
+
+AC-020-04
+
+Given a Save, Edit or Delete flow completes successfully, or a Query returns results
+When the bot replies
+Then the reply SHALL include the Main Menu Quick Reply buttons.
+
 ## 7. Non-Functional Requirements
 
 NFR-001 — State Persistence
@@ -724,7 +779,8 @@ The system SHALL integrate with the LINE Messaging API (webhook and reply API).
 
 - Optional category whitelist or suggestions.
 - Keyword search across categories and fields.
-- LINE Flex Message / Quick Reply for queries and confirmations; pagination for long results.
+- LINE Flex Message for query results; pagination for long results (Quick Reply is implemented, see FR-020).
+- LINE Rich Menu bound per user on activation and unbound on exit/timeout.
 - Fetch page title (Open Graph) to prefill the name.
 - LINE group chat support and per-user data ownership.
 - Export saved items; notes/tags fields.

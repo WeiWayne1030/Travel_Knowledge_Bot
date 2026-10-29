@@ -5,5 +5,5 @@ namespace OkinawaBot.Infrastructure.Line;
 
 public interface ILineClient
 {
-    Task ReplyMessageAsync(string replyToken, string text);
+    Task ReplyMessageAsync(string replyToken, string text, IReadOnlyList<string>? quickReplies = null);
 }
